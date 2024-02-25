@@ -29,11 +29,11 @@ impl Scanner {
 	}
 
 	fn scan_next_token(&mut self) -> Result<(), String> {
-		let current_char = self.char_at(self.current)?;
+		let old_char = self.char_at(self.current)?;
 		self.start = self.current;
 		self.current += 1;
 
-		match current_char {
+		match old_char {
 			// One lexeme.
 			'(' => self.push_token(TokenKind::LeftParenthesis),
 			')' => self.push_token(TokenKind::RightParenthesis),
@@ -47,25 +47,25 @@ impl Scanner {
 			'*' => self.push_token(TokenKind::Star),
 
 			// Two lexemes.
-			'!' => if self.next_char_is('=') {
+			'!' => if self.current_char_is('=') {
 				self.current += 1;
 				self.push_token(TokenKind::BangEqual);
 			} else {
 				self.push_token(TokenKind::Bang);
 			},
-			'=' => if self.next_char_is('=') {
+			'=' => if self.current_char_is('=') {
 				self.current += 1;
 				self.push_token(TokenKind::EqualEqual);
 			} else {
 				self.push_token(TokenKind::Equal);
 			},
-			'<' => if self.next_char_is('=') {
+			'<' => if self.current_char_is('=') {
 				self.current += 1;
 				self.push_token(TokenKind::LessEqual);
 			} else {
 				self.push_token(TokenKind::Less);
 			},
-			'>' => if self.next_char_is('=') {
+			'>' => if self.current_char_is('=') {
 				self.current += 1;
 				self.push_token(TokenKind::GreaterEqual);
 			} else {
@@ -73,7 +73,7 @@ impl Scanner {
 			},
 
 			// Multiple lexemes.
-			'/' => if self.next_char_is('/') {
+			'/' => if self.current_char_is('/') {
 				// Ignore everything until a newline is found.
 				while self.char_at(self.current)? != '\n' && !self.at_end() {
 					self.current += 1;
@@ -88,7 +88,7 @@ impl Scanner {
 
 			'\n' => self.line += 1,
 
-			_ => return Err(format!("Unexpected character `{current_char}`")),
+			_ => return Err(format!("Unexpected character `{old_char}`")),
 		};
 
 		Ok(())
@@ -118,7 +118,7 @@ impl Scanner {
 		Ok(())
 	}
 
-	fn next_char_is(&self, subject: char) -> bool {
+	fn current_char_is(&self, subject: char) -> bool {
 		self.char_at(self.current).is_ok_and(|c| c == subject)
 	}
 
