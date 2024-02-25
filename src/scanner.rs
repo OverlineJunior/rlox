@@ -126,14 +126,17 @@ impl Scanner {
 		self.char_at(self.current - 1)
 	}
 
+	// Returns the current character. Panics if at the end of the source.
 	fn current_char(&self) -> char {
 		self.char_at(self.current)
 	}
 
+	// Returns the character at the given index. Panics if the index is out of bounds.
 	fn char_at(&self, index: usize) -> char {
 		self.source.chars().nth(index).expect(&format!("Character index `{index}` out of bounds"))
 	}
 
+	// Returns true if at the end of the source.
 	fn at_end(&self) -> bool {
 		self.current >= self.source.len() - 1
 	}
