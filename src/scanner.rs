@@ -98,7 +98,12 @@ impl Scanner {
 		self.tokens.push(Token::new(kind, lexeme.into(), self.line));
 	}
 
+	// Pushes a string token. Panics if the previous character is not a ".
 	fn push_string_token(&mut self) -> Result<(), String> {
+		if self.char_at(self.current - 1) != '"' {
+			panic!("Expected `\"` at index `{}` before pushing a string token", self.current - 1);
+		}
+
 		while self.current_char() != '"' && !self.at_end() {
 			if self.current_char() == '\n' {
 				self.line += 1;
