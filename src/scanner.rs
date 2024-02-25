@@ -45,25 +45,25 @@ impl Scanner {
 			'*' => self.push_token(TokenKind::Star),
 
 			// Two lexemes.
-			'!' => if self.current_char_is('=') {
+			'!' => if self.current_char() == '=' {
 				self.advance();
 				self.push_token(TokenKind::BangEqual);
 			} else {
 				self.push_token(TokenKind::Bang);
 			},
-			'=' => if self.current_char_is('=') {
+			'=' => if self.current_char() == '=' {
 				self.advance();
 				self.push_token(TokenKind::EqualEqual);
 			} else {
 				self.push_token(TokenKind::Equal);
 			},
-			'<' => if self.current_char_is('=') {
+			'<' => if self.current_char() == '=' {
 				self.advance();
 				self.push_token(TokenKind::LessEqual);
 			} else {
 				self.push_token(TokenKind::Less);
 			},
-			'>' => if self.current_char_is('=') {
+			'>' => if self.current_char() == '=' {
 				self.advance();
 				self.push_token(TokenKind::GreaterEqual);
 			} else {
@@ -71,9 +71,9 @@ impl Scanner {
 			},
 
 			// Multiple lexemes.
-			'/' => if self.current_char_is('/') {
+			'/' => if self.current_char() == '/' {
 				// Ignore everything until a newline is found.
-				while self.char_at(self.current)? != '\n' && !self.at_end() {
+				while self.current_char() != '\n' && !self.at_end() {
 					self.advance();
 				}
 			} else {
@@ -98,8 +98,8 @@ impl Scanner {
 	}
 
 	fn push_string_token(&mut self) -> Result<(), String> {
-		while self.char_at(self.current)? != '"' && !self.at_end() {
-			if self.char_at(self.current)? == '\n' {
+		while self.current_char() != '"' && !self.at_end() {
+			if self.current_char() == '\n' {
 				self.line += 1;
 			}
 
@@ -123,19 +123,15 @@ impl Scanner {
 		}
 
 		self.current += 1;
-		self.char_at(self.current - 1).ok()
+		Some(self.char_at(self.current - 1))
 	}
 
-	fn current_char_is(&self, subject: char) -> bool {
-		self.char_at(self.current).is_ok_and(|c| c == subject)
+	fn current_char(&self) -> char {
+		self.char_at(self.current)
 	}
 
-	fn char_at(&self, index: usize) -> Result<char, String> {
-		if let Some(c) = self.source.chars().nth(index) {
-			println!("{c}");
-		}
-
-		self.source.chars().nth(index).ok_or(format!("Character index `{index}` out of bounds"))
+	fn char_at(&self, index: usize) -> char {
+		self.source.chars().nth(index).expect(&format!("Character index `{index}` out of bounds"))
 	}
 
 	fn at_end(&self) -> bool {
