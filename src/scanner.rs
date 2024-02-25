@@ -92,13 +92,13 @@ impl Scanner {
 		Ok(())
 	}
 
-	// Pushes a token with the given kind and the lexeme based on self.start and self.current.
+	/// Pushes a token with the given kind and the lexeme based on self.start and self.current.
 	fn push_token(&mut self, kind: TokenKind) {
 		let lexeme = &self.source[self.start..self.current];
 		self.tokens.push(Token::new(kind, lexeme.into(), self.line));
 	}
 
-	// Pushes a string token. Panics if the previous character is not a ".
+	/// Pushes a string token. Panics if the previous character is not a ".
 	fn push_string_token(&mut self) -> Result<(), String> {
 		if self.char_at(self.current - 1) != '"' {
 			panic!("Expected `\"` at index `{}` before pushing a string token", self.current - 1);
@@ -125,7 +125,7 @@ impl Scanner {
 		Ok(())
 	}
 
-	// Advances to the next character and returns the old one. Panics if at the end of the source.
+	/// Advances to the next character and returns the old one. Panics if at the end of the source.
 	fn advance(&mut self) -> char {
 		if self.at_end() {
 			panic!("Cannot advance past the end of the source");
@@ -135,17 +135,17 @@ impl Scanner {
 		self.char_at(self.current - 1)
 	}
 
-	// Returns the current character. Panics if at the end of the source.
+	/// Returns the current character. Panics if at the end of the source.
 	fn current_char(&self) -> char {
 		self.char_at(self.current)
 	}
 
-	// Returns the character at the given index. Panics if the index is out of bounds.
+	/// Returns the character at the given index. Panics if the index is out of bounds.
 	fn char_at(&self, index: usize) -> char {
 		self.source.chars().nth(index).expect(&format!("Character index `{index}` out of bounds"))
 	}
 
-	// Returns true if at the end of the source.
+	/// Returns true if at the end of the source.
 	fn at_end(&self) -> bool {
 		self.current >= self.source.len() - 1
 	}
