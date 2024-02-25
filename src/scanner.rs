@@ -107,11 +107,14 @@ impl Scanner {
 		}
 
 		if self.at_end() {
-			return Err("Unterminated string".to_string());
+			return Err("Unterminated string".to_owned());
 		}
 
-		let value = self.source.trim_matches('"');
-		self.tokens.push(Token::new(TokenKind::String, value.to_string(), self.line));
+		// The closing ".
+		self.advance();
+
+		let lexeme = &self.source[self.start..self.current];
+		self.tokens.push(Token::new(TokenKind::String, lexeme.into(), self.line));
 
 		Ok(())
 	}
