@@ -31,7 +31,7 @@ impl Scanner {
 	fn scan_next_token(&mut self) -> Result<(), String> {
 		self.start = self.current;
 
-		match self.advance().expect("Should not be ran when at end") {
+		match self.advance() {
 			// One lexeme.
 			'(' => self.push_token(TokenKind::LeftParenthesis),
 			')' => self.push_token(TokenKind::RightParenthesis),
@@ -116,14 +116,14 @@ impl Scanner {
 		Ok(())
 	}
 
-	// Advances to the next character. If the advance was successful, return the old character.
-	fn advance(&mut self) -> Option<char> {
+	// Advances to the next character and returns the old one. Panics if at the end of the source.
+	fn advance(&mut self) -> char {
 		if self.at_end() {
-			return None;
+			panic!("Cannot advance past the end of the source");
 		}
 
 		self.current += 1;
-		Some(self.char_at(self.current - 1))
+		self.char_at(self.current - 1)
 	}
 
 	fn current_char(&self) -> char {
