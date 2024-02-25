@@ -29,11 +29,9 @@ impl Scanner {
 	}
 
 	fn scan_next_token(&mut self) -> Result<(), String> {
-		let old_char = self.char_at(self.current)?;
 		self.start = self.current;
-		self.current += 1;
 
-		match old_char {
+		match self.advance().expect("Should not be ran when at end") {
 			// One lexeme.
 			'(' => self.push_token(TokenKind::LeftParenthesis),
 			')' => self.push_token(TokenKind::RightParenthesis),
@@ -48,25 +46,25 @@ impl Scanner {
 
 			// Two lexemes.
 			'!' => if self.current_char_is('=') {
-				self.current += 1;
+				self.advance();
 				self.push_token(TokenKind::BangEqual);
 			} else {
 				self.push_token(TokenKind::Bang);
 			},
 			'=' => if self.current_char_is('=') {
-				self.current += 1;
+				self.advance();
 				self.push_token(TokenKind::EqualEqual);
 			} else {
 				self.push_token(TokenKind::Equal);
 			},
 			'<' => if self.current_char_is('=') {
-				self.current += 1;
+				self.advance();
 				self.push_token(TokenKind::LessEqual);
 			} else {
 				self.push_token(TokenKind::Less);
 			},
 			'>' => if self.current_char_is('=') {
-				self.current += 1;
+				self.advance();
 				self.push_token(TokenKind::GreaterEqual);
 			} else {
 				self.push_token(TokenKind::Greater);
@@ -76,7 +74,7 @@ impl Scanner {
 			'/' => if self.current_char_is('/') {
 				// Ignore everything until a newline is found.
 				while self.char_at(self.current)? != '\n' && !self.at_end() {
-					self.current += 1;
+					self.advance();
 				}
 			} else {
 				self.push_token(TokenKind::Slash);
@@ -88,7 +86,7 @@ impl Scanner {
 
 			'\n' => self.line += 1,
 
-			_ => return Err(format!("Unexpected character `{old_char}`")),
+			c => return Err(format!("Unexpected character `{c}`")),
 		};
 
 		Ok(())
@@ -105,7 +103,7 @@ impl Scanner {
 				self.line += 1;
 			}
 
-			self.current += 1;
+			self.advance();
 		}
 
 		if self.at_end() {
@@ -116,6 +114,16 @@ impl Scanner {
 		self.tokens.push(Token::new(TokenKind::String, value.to_string(), self.line));
 
 		Ok(())
+	}
+
+	// Advances to the next character. If the advance was successful, return the old character.
+	fn advance(&mut self) -> Option<char> {
+		if self.at_end() {
+			return None;
+		}
+
+		self.current += 1;
+		self.char_at(self.current - 1).ok()
 	}
 
 	fn current_char_is(&self, subject: char) -> bool {
