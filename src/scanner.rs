@@ -131,7 +131,7 @@ impl Scanner {
 	}
 
 	fn at_end(&self) -> bool {
-		self.current >= self.source.len()
+		self.current >= self.source.len() - 1
 	}
 }
 
