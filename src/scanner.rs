@@ -92,9 +92,10 @@ impl Scanner {
 		Ok(())
 	}
 
+	// Pushes a token with the given kind and the lexeme based on self.start and self.current.
 	fn push_token(&mut self, kind: TokenKind) {
 		let lexeme = &self.source[self.start..self.current];
-		self.tokens.push(Token::new(kind, lexeme.to_string(), self.line));
+		self.tokens.push(Token::new(kind, lexeme.into(), self.line));
 	}
 
 	fn push_string_token(&mut self) -> Result<(), String> {
