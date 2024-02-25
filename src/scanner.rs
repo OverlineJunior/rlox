@@ -119,7 +119,7 @@ impl Scanner {
 		// The closing ".
 		self.advance();
 
-		let lexeme = &self.source[self.start..self.current];
+		let lexeme = self.source[self.start..self.current].trim_matches('"');
 		self.tokens.push(Token::new(TokenKind::String, lexeme.into(), self.line));
 
 		Ok(())
