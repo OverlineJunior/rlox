@@ -24,7 +24,7 @@ impl Scanner {
 			self.scan_next_token()?;
 		}
 
-		self.tokens.push(Token::new(TokenKind::Eof, String::new(), self.line));
+		self.tokens.push(Token::symbol(TokenKind::Eof, String::new(), self.line));
 		Ok(self.tokens.clone())
 	}
 
@@ -33,41 +33,41 @@ impl Scanner {
 
 		match self.advance() {
 			// One lexeme.
-			'(' => self.push_token(TokenKind::LeftParenthesis),
-			')' => self.push_token(TokenKind::RightParenthesis),
-			'{' => self.push_token(TokenKind::LeftBrace),
-			'}' => self.push_token(TokenKind::RightBrace),
-			',' => self.push_token(TokenKind::Comma),
-			'.' => self.push_token(TokenKind::Dot),
-			'+' => self.push_token(TokenKind::Plus),
-			'-' => self.push_token(TokenKind::Minus),
-			';' => self.push_token(TokenKind::Semicolon),
-			'*' => self.push_token(TokenKind::Star),
+			'(' => self.push_symbol(TokenKind::LeftParenthesis),
+			')' => self.push_symbol(TokenKind::RightParenthesis),
+			'{' => self.push_symbol(TokenKind::LeftBrace),
+			'}' => self.push_symbol(TokenKind::RightBrace),
+			',' => self.push_symbol(TokenKind::Comma),
+			'.' => self.push_symbol(TokenKind::Dot),
+			'+' => self.push_symbol(TokenKind::Plus),
+			'-' => self.push_symbol(TokenKind::Minus),
+			';' => self.push_symbol(TokenKind::Semicolon),
+			'*' => self.push_symbol(TokenKind::Star),
 
 			// Two lexemes.
 			'!' => if self.current_char() == '=' {
 				self.advance();
-				self.push_token(TokenKind::BangEqual);
+				self.push_symbol(TokenKind::BangEqual);
 			} else {
-				self.push_token(TokenKind::Bang);
+				self.push_symbol(TokenKind::Bang);
 			},
 			'=' => if self.current_char() == '=' {
 				self.advance();
-				self.push_token(TokenKind::EqualEqual);
+				self.push_symbol(TokenKind::EqualEqual);
 			} else {
-				self.push_token(TokenKind::Equal);
+				self.push_symbol(TokenKind::Equal);
 			},
 			'<' => if self.current_char() == '=' {
 				self.advance();
-				self.push_token(TokenKind::LessEqual);
+				self.push_symbol(TokenKind::LessEqual);
 			} else {
-				self.push_token(TokenKind::Less);
+				self.push_symbol(TokenKind::Less);
 			},
 			'>' => if self.current_char() == '=' {
 				self.advance();
-				self.push_token(TokenKind::GreaterEqual);
+				self.push_symbol(TokenKind::GreaterEqual);
 			} else {
-				self.push_token(TokenKind::Greater);
+				self.push_symbol(TokenKind::Greater);
 			},
 
 			// Multiple lexemes.
@@ -77,7 +77,7 @@ impl Scanner {
 					self.advance();
 				}
 			} else {
-				self.push_token(TokenKind::Slash);
+				self.push_symbol(TokenKind::Slash);
 			},
 			'"' => self.push_string_token()?,
 
@@ -92,10 +92,11 @@ impl Scanner {
 		Ok(())
 	}
 
-	/// Pushes a token with the given kind and the lexeme based on self.start and self.current.
-	fn push_token(&mut self, kind: TokenKind) {
+	/// Pushes a symbolic token with the given kind and the lexeme based on self.start and self.current.
+	/// A symbolic token is a token that does not have a literal value.
+	fn push_symbol(&mut self, kind: TokenKind) {
 		let lexeme = &self.source[self.start..self.current];
-		self.tokens.push(Token::new(kind, lexeme.into(), self.line));
+		self.tokens.push(Token::symbol(kind, lexeme.into(), self.line));
 	}
 
 	/// Pushes a string token. Panics if the previous character is not a ".
@@ -119,8 +120,10 @@ impl Scanner {
 		// The closing ".
 		self.advance();
 
-		let lexeme = self.source[self.start..self.current].trim_matches('"');
-		self.tokens.push(Token::new(TokenKind::String, lexeme.into(), self.line));
+		let lexeme = &self.source[self.start..self.current];
+		let literal = lexeme.trim_matches('"');
+		let token = Token::new(TokenKind::String, lexeme.into(), literal.into(), self.line);
+		self.tokens.push(token);
 
 		Ok(())
 	}
