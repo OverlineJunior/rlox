@@ -2,6 +2,7 @@
 
 mod token;
 mod scanner;
+mod literal;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
