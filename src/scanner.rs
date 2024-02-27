@@ -80,6 +80,7 @@ impl Scanner {
 				self.push_symbol(TokenKind::Slash);
 			},
 			'"' => self.push_string_token()?,
+			c if c.is_ascii_digit() => self.push_number_token(),
 
 			// Ignore whitespace.
 			' ' | '\r' | '\t' => (),
@@ -126,6 +127,25 @@ impl Scanner {
 		self.tokens.push(token);
 
 		Ok(())
+	}
+
+	fn push_number_token(&mut self) {
+		while self.current_char().is_ascii_digit() {
+			self.advance();
+		}
+
+		if self.current_char() == '.' && self.char_at(self.current + 1).is_ascii_digit() {
+			self.advance();
+
+			while self.current_char().is_ascii_digit() {
+				self.advance();
+			}
+		}
+
+		let lexeme = &self.source[self.start..self.current];
+		let literal = lexeme.parse::<f64>().expect("Lexeme should only contain digits and a dot, so it should be parseable to f64");
+		let token = Token::new(TokenKind::Number, lexeme.into(), literal.into(), self.line);
+		self.tokens.push(token);
 	}
 
 	/// Advances to the next character and returns the old one. Panics if at the end of the source.
