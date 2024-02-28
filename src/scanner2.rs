@@ -1,4 +1,4 @@
-use crate::{cursor::Cursor, token::Token, token_kind::TokenKind as TK};
+use crate::{cursor::{Cursor, EOF}, token::Token, token_kind::TokenKind as TK};
 
 fn is_whitespace(c: char) -> bool {
 	matches!(c, ' ' | '\r' | '\t' | '\n')
@@ -95,9 +95,7 @@ impl Cursor {
 	}
 
 	fn skip_line_comment(&mut self) {
-		while self.current() != '\n' && !self.is_eof() {
-			self.eat();
-		}
+		self.eat_while(|c| c != '\n' && c != EOF);
 	}
 }
 
