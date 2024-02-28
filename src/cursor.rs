@@ -41,6 +41,10 @@ impl Cursor {
 		self.source[self.checkpoint..self.position].chars()
 	}
 
+	pub fn line(&self) -> usize {
+		self.line
+	}
+
 	pub fn is_eof(&self) -> bool {
 		self.current() == EOF
 	}
