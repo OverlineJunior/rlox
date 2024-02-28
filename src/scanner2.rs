@@ -132,6 +132,11 @@ impl Cursor {
 	}
 
 	fn eat_number_token(&mut self) -> Result<Option<Token>, String> {
+		assert!(
+			self.prev().is_ascii_digit(),
+			"Should be called after eating the first digit"
+		);
+
 		self.eat_while(|c| c.is_ascii_digit());
 
 		if self.current() == '.' {
