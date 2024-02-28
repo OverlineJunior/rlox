@@ -19,36 +19,44 @@ impl Cursor {
 		}
 	}
 
+	/// Returns the character before the one currently being pointed to. Panics if the cursor is at the start of the source.
 	pub fn prev(&self) -> char {
 		assert!(self.position > 0, "Cannot go back from the start of the source");
 
 		self.source.chars().nth(self.position - 1).expect("Previous character should never be EOF")
 	}
 
+	/// Returns the character currently being pointed to or EOF if the cursor is at the end of the source.
 	pub fn current(&self) -> char {
 		self.source.chars().nth(self.position).unwrap_or(EOF)
 	}
 
+	/// Returns the character after the one currently being pointed to or EOF if the next position is at the end of the source.
 	pub fn next(&self) -> char {
 		self.source.chars().nth(self.position + 1).unwrap_or(EOF)
 	}
 
+	/// Sets a checkpoint at the current cursor position.
 	pub fn set_checkpoint(&mut self) {
 		self.checkpoint = self.position;
 	}
 
+	/// Returns every char eaten since the last checkpoint.
 	pub fn chars_since_checkpoint(&self) -> Chars {
 		self.source[self.checkpoint..self.position].chars()
 	}
 
+	/// Returns the current line number.
 	pub fn line(&self) -> usize {
 		self.line
 	}
 
+	/// Returns true if the cursor is at the end of the source.
 	pub fn is_eof(&self) -> bool {
 		self.current() == EOF
 	}
 
+	/// Eats the current character and returns it. Returns None if the cursor is at the end of the source.
 	pub fn eat(&mut self) -> Option<char> {
 		let c = self.current();
 
@@ -63,6 +71,7 @@ impl Cursor {
 		Some(c)
 	}
 
+	/// Repeatedly eats characters while the predicate returns true.
 	pub fn eat_while(&mut self, predicate: impl Fn(char) -> bool) {
 		while !self.is_eof() && predicate(self.current()) {
 			self.eat();
