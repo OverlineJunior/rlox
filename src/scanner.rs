@@ -1,200 +1,187 @@
-use crate::{token::Token, token_kind::TokenKind};
+use crate::{cursor::{Cursor, EOF}, token::Token, token_kind::TokenKind as TK};
 
-pub struct Scanner {
-	source: String,
-	tokens: Vec<Token>,
-	start: usize,
-	current: usize,
-	line: usize,
+fn is_whitespace(c: char) -> bool {
+	matches!(c, ' ' | '\r' | '\t' | '\n')
 }
 
-impl Scanner {
-	fn new(source: String) -> Scanner {
-		Scanner {
-			source,
-			tokens: Vec::new(),
-			start: 0,
-			current: 0,
-			line: 1,
+fn is_identifier_start(c: char) -> bool {
+	c.is_ascii_alphabetic() || c == '_'
+}
+
+fn is_identifier_continue(c: char) -> bool {
+	c.is_ascii_alphanumeric() || c == '_'
+}
+
+pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
+	let mut cursor = Cursor::new(source);
+	let mut tokens: Vec<Token> = Vec::new();
+
+	loop {
+		match cursor.eat_token() {
+			Ok(Some(token)) => tokens.push(token),
+			Ok(None) => break,
+			Err(e) => return Err(e),
 		}
 	}
 
-	fn scan_source(&mut self) -> Result<Vec<Token>, String> {
-		while !self.at_end() {
-			self.scan_next_token()?;
+	Ok(tokens)
+}
+
+impl Cursor {
+	/// Attempts to eat the next token.
+	/// Returns `None` if at EOF or if no token was found before it
+	/// (e.g. trailing whitespace at the end).
+	pub fn eat_token(&mut self) -> Result<Option<Token>, String> {
+		self.set_checkpoint();
+
+		if self.is_eof() {
+			return Ok(None);
 		}
 
-		self.tokens.push(Token::symbol(TokenKind::Eof, String::new(), self.line));
-		Ok(self.tokens.clone())
-	}
+		// Symbols are returned later to avoid duplication.
+		let symbol_kind = match self.eat().expect("Should not be EOF") {
+			// Single lexeme.
+			'(' => TK::LeftParenthesis,
+			')' => TK::RightParenthesis,
+		    '{' => TK::LeftBrace,
+			'}' => TK::RightBrace,
+			',' => TK::Comma,
+			'.' => TK::Dot,
+			'+' => TK::Plus,
+			'-' => TK::Minus,
+			';' => TK::Semicolon,
+			'*' => TK::Star,
 
-	fn scan_next_token(&mut self) -> Result<(), String> {
-		self.start = self.current;
+			// Double lexeme.
+			'!' => if self.current() == '=' {
+				self.eat();
+				TK::BangEqual
+			} else {
+				TK::Bang
+			},
 
-		match self.advance() {
-			// One lexeme.
-			'(' => self.push_symbol(TokenKind::LeftParenthesis),
-			')' => self.push_symbol(TokenKind::RightParenthesis),
-			'{' => self.push_symbol(TokenKind::LeftBrace),
-			'}' => self.push_symbol(TokenKind::RightBrace),
-			',' => self.push_symbol(TokenKind::Comma),
-			'.' => self.push_symbol(TokenKind::Dot),
-			'+' => self.push_symbol(TokenKind::Plus),
-			'-' => self.push_symbol(TokenKind::Minus),
-			';' => self.push_symbol(TokenKind::Semicolon),
-			'*' => self.push_symbol(TokenKind::Star),
+			'=' => if self.current() == '=' {
+				self.eat();
+				TK::EqualEqual
+			} else {
+				TK::Equal
+			},
 
-			// Two lexemes.
-			'!' => if self.current_char() == '=' {
-				self.advance();
-				self.push_symbol(TokenKind::BangEqual);
+			'<' => if self.current() == '=' {
+				self.eat();
+				TK::LessEqual
 			} else {
-				self.push_symbol(TokenKind::Bang);
+				TK::Less
 			},
-			'=' => if self.current_char() == '=' {
-				self.advance();
-				self.push_symbol(TokenKind::EqualEqual);
+
+			'>' => if self.current() == '=' {
+				self.eat();
+				TK::GreaterEqual
 			} else {
-				self.push_symbol(TokenKind::Equal);
-			},
-			'<' => if self.current_char() == '=' {
-				self.advance();
-				self.push_symbol(TokenKind::LessEqual);
-			} else {
-				self.push_symbol(TokenKind::Less);
-			},
-			'>' => if self.current_char() == '=' {
-				self.advance();
-				self.push_symbol(TokenKind::GreaterEqual);
-			} else {
-				self.push_symbol(TokenKind::Greater);
+				TK::Greater
 			},
 
 			// Multiple lexemes.
-			'/' => if self.current_char() == '/' {
-				// Ignore everything until a newline is found.
-				while self.current_char() != '\n' && !self.at_end() {
-					self.advance();
-				}
+			'/' => if self.current() == '/' {
+				self.skip_line_comment();
+				return self.eat_token();
 			} else {
-				self.push_symbol(TokenKind::Slash);
+				TK::Slash
 			},
-			'"' => self.push_string_token()?,
-			c if c.is_ascii_digit() => self.push_number_token(),
-			c if c.is_ascii_alphabetic() || c == '_' => self.push_identifier_token(),
+
+			'"' => return self.eat_string_token(),
+
+			c if c.is_ascii_digit() => return self.eat_number_token(),
+
+			c if is_identifier_start(c) => return Ok(self.eat_identifier_token()),
 
 			// Ignore whitespace.
-			' ' | '\r' | '\t' => (),
+			c if is_whitespace(c) => return self.eat_token(),
 
-			'\n' => self.line += 1,
-
-			c => return Err(format!("Unexpected character `{c}`")),
+			c => return Err(format!("Unexpected character `{}`", c)),
 		};
 
-		Ok(())
+		Ok(Some(Token::symbol(
+			symbol_kind,
+			self.chars_since_checkpoint().collect(),
+			self.line(),
+		)))
 	}
 
-	/// Pushes a symbolic token with the given kind and the lexeme based on self.start and self.current.
-	/// A symbolic token is a token that does not have a literal value.
-	fn push_symbol(&mut self, kind: TokenKind) {
-		let lexeme = &self.source[self.start..self.current];
-		self.tokens.push(Token::symbol(kind, lexeme.into(), self.line));
-	}
+	fn eat_string_token(&mut self) -> Result<Option<Token>, String> {
+		assert_eq!(
+			self.prev(),
+			'"',
+			"Should be called after eating the opening quote"
+		);
 
-	/// Pushes a string token. Panics if the previous character is not a ".
-	fn push_string_token(&mut self) -> Result<(), String> {
-		if self.char_at(self.current - 1) != '"' {
-			panic!("Expected `\"` at index `{}` before pushing a string token", self.current - 1);
+		self.eat_while(|c| c != '"' && c != EOF);
+
+		if self.is_eof() {
+			return Err("Unterminated string".into());
 		}
 
-		while self.current_char() != '"' && !self.at_end() {
-			if self.current_char() == '\n' {
-				self.line += 1;
-			}
+		// The closing quote.
+		self.eat();
 
-			self.advance();
-		}
-
-		if self.at_end() {
-			return Err("Unterminated string".to_owned());
-		}
-
-		// The closing ".
-		self.advance();
-
-		let lexeme = &self.source[self.start..self.current];
+		let lexeme = &self.string_since_checkpoint();
 		let literal = lexeme.trim_matches('"');
-		let token = Token::new(TokenKind::String, lexeme.into(), literal.into(), self.line);
-		self.tokens.push(token);
-
-		Ok(())
+		Ok(Some(Token::new(
+			TK::String, lexeme.into(), literal.into(), self.line()
+		)))
 	}
 
-	fn push_number_token(&mut self) {
-		while self.current_char().is_ascii_digit() {
-			self.advance();
-		}
+	fn eat_number_token(&mut self) -> Result<Option<Token>, String> {
+		assert!(
+			self.prev().is_ascii_digit(),
+			"Should be called after eating the first digit"
+		);
 
-		if self.current_char() == '.' && self.char_at(self.current + 1).is_ascii_digit() {
-			self.advance();
+		self.eat_while(|c| c.is_ascii_digit());
 
-			while self.current_char().is_ascii_digit() {
-				self.advance();
+		if self.current() == '.' {
+			if !self.next().is_ascii_digit() {
+				return Err("Digit expected after dot".into());
 			}
+
+			self.eat();
+			self.eat_while(|c| c.is_ascii_digit());
 		}
 
-		let lexeme = &self.source[self.start..self.current];
-		let literal = lexeme.parse::<f64>().expect("Lexeme should only contain digits and a dot, so it should be parseable to f64");
-		let token = Token::new(TokenKind::Number, lexeme.into(), literal.into(), self.line);
-		self.tokens.push(token);
+		let lexeme = &self.string_since_checkpoint();
+		let literal = lexeme.parse::<f64>().expect("Should be a valid number");
+		Ok(Some(Token::new(
+			TK::Number, lexeme.into(), literal.into(), self.line()
+		)))
 	}
 
-	fn push_identifier_token(&mut self) {
-		while self.current_char().is_ascii_alphanumeric() || self.current_char() == '_' {
-			self.advance();
-		}
+	fn eat_identifier_token(&mut self) -> Option<Token> {
+		assert!(
+			is_identifier_start(self.prev()),
+			"Should be called after eating the first identifier character"
+		);
 
-		let lexeme = &self.source[self.start..self.current];
-		let kind = TokenKind::keyword_from(lexeme).unwrap_or(TokenKind::Identifier);
-		self.push_symbol(kind);
+		self.eat_while(is_identifier_continue);
+
+		let lexeme = &self.string_since_checkpoint();
+		let kind = TK::keyword_from(lexeme).unwrap_or(TK::Identifier);
+		Some(Token::symbol(kind, lexeme.into(), self.line()))
 	}
 
-	/// Advances to the next character and returns the old one. Panics if at the end of the source.
-	fn advance(&mut self) -> char {
-		if self.at_end() {
-			panic!("Cannot advance past the end of the source");
-		}
-
-		self.current += 1;
-		self.char_at(self.current - 1)
-	}
-
-	/// Returns the current character. Panics if at the end of the source.
-	fn current_char(&self) -> char {
-		self.char_at(self.current)
-	}
-
-	/// Returns the character at the given index. Panics if the index is out of bounds.
-	fn char_at(&self, index: usize) -> char {
-		self.source.chars().nth(index).expect(&format!("Character index `{index}` out of bounds"))
-	}
-
-	/// Returns true if at the end of the source.
-	fn at_end(&self) -> bool {
-		self.current >= self.source.len() - 1
+	fn skip_line_comment(&mut self) {
+		self.eat_while(|c| c != '\n' && c != EOF);
 	}
 }
 
 #[cfg(test)]
 mod tests {
 	use std::{fs, path::Path};
-	use super::Scanner;
+	use super::tokenize;
 
 	#[test]
-	fn foo() {
-		let src = fs::read_to_string(Path::new("test_source")).unwrap();
-		let mut scanner = Scanner::new(src);
-		let tokens = scanner.scan_source().unwrap();
-		println!("Tokens found: {} ---- {:#?}", tokens.len(), tokens);
+	fn test_tokenize() {
+		let source = fs::read_to_string(Path::new("test_source_2")).unwrap();
+		let tokens = tokenize(source).unwrap();
+		println!("{:#?}", tokens);
 	}
 }
