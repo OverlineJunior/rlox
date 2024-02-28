@@ -4,6 +4,14 @@ fn is_whitespace(c: char) -> bool {
 	matches!(c, ' ' | '\r' | '\t' | '\n')
 }
 
+fn is_identifier_start(c: char) -> bool {
+	c.is_ascii_alphabetic() || c == '_'
+}
+
+fn is_identifier_continue(c: char) -> bool {
+	c.is_ascii_alphanumeric() || c == '_'
+}
+
 pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
 	let mut cursor = Cursor::new(source);
 	let mut tokens: Vec<Token> = Vec::new();
@@ -85,6 +93,8 @@ impl Cursor {
 
 			c if c.is_ascii_digit() => return self.eat_number_token(),
 
+			c if is_identifier_start(c) => return Ok(self.eat_identifier_token()),
+
 			// Ignore whitespace.
 			c if is_whitespace(c) => return self.eat_token(),
 
@@ -138,6 +148,19 @@ impl Cursor {
 		Ok(Some(Token::new(
 			TK::Number, lexeme.into(), literal.into(), self.line()
 		)))
+	}
+
+	fn eat_identifier_token(&mut self) -> Option<Token> {
+		assert!(
+			is_identifier_start(self.prev()),
+			"Should be called after eating the first identifier character"
+		);
+
+		self.eat_while(is_identifier_continue);
+
+		let lexeme = &self.string_since_checkpoint();
+		let kind = TK::keyword_from(lexeme).unwrap_or(TK::Identifier);
+		Some(Token::symbol(kind, lexeme.into(), self.line()))
 	}
 
 	fn skip_line_comment(&mut self) {
