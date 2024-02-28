@@ -46,6 +46,11 @@ impl Cursor {
 		self.source[self.checkpoint..self.position].chars()
 	}
 
+	/// Returns a `String` composed of every char eaten since the last checkpoint.
+	pub fn string_since_checkpoint(&self) -> String {
+		self.chars_since_checkpoint().collect::<String>()
+	}
+
 	/// Returns the current line number.
 	pub fn line(&self) -> usize {
 		self.line
