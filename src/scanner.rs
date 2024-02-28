@@ -180,7 +180,7 @@ mod tests {
 
 	#[test]
 	fn test_tokenize() {
-		let source = fs::read_to_string(Path::new("test_source_2")).unwrap();
+		let source = fs::read_to_string(Path::new("test_source")).unwrap();
 		let tokens = tokenize(source).unwrap();
 		println!("{:#?}", tokens);
 	}
