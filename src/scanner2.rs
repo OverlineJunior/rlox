@@ -83,6 +83,8 @@ impl Cursor {
 
 			'"' => return self.eat_string_token(),
 
+			c if c.is_ascii_digit() => return self.eat_number_token(),
+
 			// Ignore whitespace.
 			c if is_whitespace(c) => return self.eat_token(),
 
@@ -116,6 +118,25 @@ impl Cursor {
 		let literal = lexeme.trim_matches('"');
 		Ok(Some(Token::new(
 			TK::String, lexeme.into(), literal.into(), self.line()
+		)))
+	}
+
+	fn eat_number_token(&mut self) -> Result<Option<Token>, String> {
+		self.eat_while(|c| c.is_ascii_digit());
+
+		if self.current() == '.' {
+			if !self.next().is_ascii_digit() {
+				return Err("Digit expected after dot".into());
+			}
+
+			self.eat();
+			self.eat_while(|c| c.is_ascii_digit());
+		}
+
+		let lexeme = &self.string_since_checkpoint();
+		let literal = lexeme.parse::<f64>().expect("Should be a valid number");
+		Ok(Some(Token::new(
+			TK::Number, lexeme.into(), literal.into(), self.line()
 		)))
 	}
 
