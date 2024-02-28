@@ -20,6 +20,8 @@ impl Cursor {
 	}
 
 	pub fn prev(&self) -> char {
+		assert!(self.position > 0, "Cannot go back from the start of the source");
+
 		self.source.chars().nth(self.position - 1).unwrap_or(EOF)
 	}
 
