@@ -4,6 +4,7 @@ mod token;
 mod scanner;
 mod literal;
 mod token_kind;
+mod cursor;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
