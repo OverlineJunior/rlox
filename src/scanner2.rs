@@ -81,6 +81,8 @@ impl Cursor {
 				TK::Slash
 			},
 
+			'"' => return self.eat_string_token(),
+
 			// Ignore whitespace.
 			c if is_whitespace(c) => return self.eat_token(),
 
@@ -91,6 +93,29 @@ impl Cursor {
 			symbol_kind,
 			self.chars_since_checkpoint().collect(),
 			self.line(),
+		)))
+	}
+
+	fn eat_string_token(&mut self) -> Result<Option<Token>, String> {
+		assert_eq!(
+			self.prev(),
+			'"',
+			"Should be called after eating the opening quote"
+		);
+
+		self.eat_while(|c| c != '"' && c != EOF);
+
+		if self.is_eof() {
+			return Err("Unterminated string".into());
+		}
+
+		// The closing quote.
+		self.eat();
+
+		let lexeme = &self.string_since_checkpoint();
+		let literal = lexeme.trim_matches('"');
+		Ok(Some(Token::new(
+			TK::String, lexeme.into(), literal.into(), self.line()
 		)))
 	}
 
