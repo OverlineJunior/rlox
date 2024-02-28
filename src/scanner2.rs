@@ -73,6 +73,14 @@ impl Cursor {
 				TK::Greater
 			},
 
+			// Multiple lexemes.
+			'/' => if self.current() == '/' {
+				self.skip_line_comment();
+				return self.eat_token();
+			} else {
+				TK::Slash
+			},
+
 			// Ignore whitespace.
 			c if is_whitespace(c) => return self.eat_token(),
 
@@ -84,6 +92,12 @@ impl Cursor {
 			self.chars_since_checkpoint().collect(),
 			self.line(),
 		)))
+	}
+
+	fn skip_line_comment(&mut self) {
+		while self.current() != '\n' && !self.is_eof() {
+			self.eat();
+		}
 	}
 }
 
