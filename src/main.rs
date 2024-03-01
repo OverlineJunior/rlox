@@ -28,7 +28,7 @@ fn run(source: String) -> Result<(), String> {
 }
 
 fn run_file(path: &Path) -> Result<(), String> {
-	let source = fs::read_to_string(path).expect(&format!("Could not open {}", path.display()));
+	let source = fs::read_to_string(path).unwrap_or_else(|_| panic!("Could not open {}", path.display()));
 	run(source)
 }
 
