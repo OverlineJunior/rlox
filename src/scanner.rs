@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Cursor, EOF},
+    string_cursor::{StringCursor, EOF},
     token::Token,
     token_kind::TokenKind as TK,
 };
@@ -17,7 +17,7 @@ fn is_identifier_continue(c: char) -> bool {
 }
 
 pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
-    let mut cursor = Cursor::new(source);
+    let mut cursor = StringCursor::new(source);
     let mut tokens: Vec<Token> = Vec::new();
 
     loop {
@@ -31,7 +31,7 @@ pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
     Ok(tokens)
 }
 
-impl Cursor {
+impl StringCursor {
     /// Attempts to eat the next token.
     /// Returns `None` if at EOF or if no token was found before it
     /// (e.g. trailing whitespace at the end).
@@ -43,7 +43,7 @@ impl Cursor {
         }
 
         // Symbols are returned later to avoid duplication.
-        let symbol_kind = match self.eat().expect("Should not be EOF") {
+        let symbol_kind = match self.eat() {
             // Single lexeme.
             '(' => TK::LeftParenthesis,
             ')' => TK::RightParenthesis,
@@ -117,7 +117,7 @@ impl Cursor {
 
         Ok(Some(Token::symbol(
             symbol_kind,
-            self.chars_since_checkpoint().collect(),
+            self.string_since_checkpoint(),
             self.line(),
         )))
     }

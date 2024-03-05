@@ -1,11 +1,12 @@
 #![allow(dead_code, unused_variables, unused_imports)]
 
-mod cursor;
 mod expr;
 mod literal;
 mod scanner;
 mod token;
 mod token_kind;
+mod cursor;
+mod string_cursor;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
