@@ -7,6 +7,7 @@ mod token;
 mod token_kind;
 mod cursor;
 mod string_cursor;
+mod parser;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
