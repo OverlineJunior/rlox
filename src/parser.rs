@@ -2,72 +2,37 @@ use crate::{
     cursor::Cursor, expr::Expr, literal::Literal, token::Token, token_kind::TokenKind as TK,
 };
 
+/// Creates a function for a binary expression.
+/// Pattern: `fn_name -> expr_fn (token, ...) expr_fn`.
+macro_rules! binary_expr {
+    ($($name:ident -> $left:ident ($($op:ident),+) $right:ident)*) => {
+        $(
+            fn $name(tokens: &mut Cursor<Token>) -> Option<Expr> {
+                let mut expr = $left(tokens)?;
+
+                while let Some(op) = tokens.current().filter(|c| {
+                    $(c.kind == TK::$op)||+
+                }) {
+                    tokens.eat().expect("Should have a token");
+                    let right = $right(tokens)?;
+                    expr = Expr::Binary(Box::new(expr), op, Box::new(right));
+                }
+
+                Some(expr)
+            }
+        )*
+    };
+}
+
 fn expression(tokens: &mut Cursor<Token>) -> Option<Expr> {
     equality(tokens)
 }
 
-fn equality(tokens: &mut Cursor<Token>) -> Option<Expr> {
-    let mut expr = comparison(tokens)?;
-
-    while let Some(op) = tokens
-        .current()
-        .filter(|c| c.kind == TK::EqualEqual || c.kind == TK::BangEqual)
-    {
-        tokens.eat().expect("Should have a token");
-        let right = comparison(tokens)?;
-        expr = Expr::Binary(Box::new(expr), op, Box::new(right));
-    }
-
-    Some(expr)
-}
-
-fn comparison(tokens: &mut Cursor<Token>) -> Option<Expr> {
-    let mut expr = term(tokens)?;
-
-    while let Some(op) = tokens.current().filter(|c| {
-        c.kind == TK::Greater
-            || c.kind == TK::GreaterEqual
-            || c.kind == TK::Less
-            || c.kind == TK::LessEqual
-            || c.kind == TK::EqualEqual
-            || c.kind == TK::BangEqual
-    }) {
-        tokens.eat().expect("Should have a token");
-        let right = term(tokens)?;
-        expr = Expr::Binary(Box::new(expr), op, Box::new(right));
-    }
-
-    Some(expr)
-}
-
-fn term(tokens: &mut Cursor<Token>) -> Option<Expr> {
-    let mut expr = factor(tokens)?;
-
-    while let Some(op) = tokens
-        .current()
-        .filter(|c| c.kind == TK::Plus || c.kind == TK::Minus)
-    {
-        tokens.eat().expect("Should have a token");
-        let right = factor(tokens)?;
-        expr = Expr::Binary(Box::new(expr), op, Box::new(right));
-    }
-
-    Some(expr)
-}
-
-fn factor(tokens: &mut Cursor<Token>) -> Option<Expr> {
-    let mut expr = unary(tokens)?;
-
-    while let Some(op) = tokens
-        .current()
-        .filter(|c| c.kind == TK::Star || c.kind == TK::Slash)
-    {
-        tokens.eat().expect("Should have a token");
-        let right = unary(tokens)?;
-        expr = Expr::Binary(Box::new(expr), op, Box::new(right));
-    }
-
-    Some(expr)
+binary_expr! {
+    equality -> comparison (BangEqual, EqualEqual) comparison
+    comparison -> term (Greater, GreaterEqual, Less, LessEqual) term
+    term -> factor (Plus, Minus) factor
+    factor -> unary (Star, Slash) unary
 }
 
 fn unary(tokens: &mut Cursor<Token>) -> Option<Expr> {
