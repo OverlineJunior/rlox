@@ -4,48 +4,63 @@ use crate::{
     cursor::Cursor, expr::Expr, literal::Literal, token::Token, token_kind::TokenKind as TK,
 };
 
+/// Creates a function for an unary expression.
+/// Pattern: `fn_name -> (token, ...) expr_fn | expr_fn`.
+macro_rules! unary_expr {
+    ($name:ident -> ($($op:ident),+) $right:ident | $else:ident) => {
+        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
+            if tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
+                let op = tokens.pop_front().expect("Should have a token");
+                let right = $right(tokens)?;
+                return Some(Expr::Unary(op, Box::new(right)));
+            }
+
+            $else(tokens)
+        }
+    };
+}
+
 /// Creates a function for a binary expression.
 /// Pattern: `fn_name -> expr_fn (token, ...) expr_fn`.
 macro_rules! binary_expr {
-    ($($name:ident -> $left:ident ($($op:ident),+) $right:ident)*) => {
-        $(
-            fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
-                let mut expr = $left(tokens)?;
+    ($name:ident -> $left:ident ($($op:ident),+) $right:ident) => {
+        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
+            let mut expr = $left(tokens)?;
 
-                while tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
-                    let op = tokens.front().expect("Should have a token").clone();
-                    tokens.pop_front().expect("Should have a token");
-                    let right = $right(tokens)?;
-                    expr = Expr::Binary(Box::new(expr), op, Box::new(right));
-                }
-
-                Some(expr)
+            while tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
+                let op = tokens.front().expect("Should have a token").clone();
+                tokens.pop_front().expect("Should have a token");
+                let right = $right(tokens)?;
+                expr = Expr::Binary(Box::new(expr), op, Box::new(right));
             }
-        )*
+
+            Some(expr)
+        }
     };
+}
+
+macro_rules! expr {
+    ($name:ident -> ($($op:ident),+) $right:ident | $else:ident; $($rest:tt)*) => {
+        unary_expr!( $name -> ($($op),+) $right | $else );
+        expr!( $($rest)* );
+    };
+    ($name:ident -> $left:ident ($($op:ident),+) $right:ident; $($rest:tt)*) => {
+        binary_expr!( $name -> $left ($($op),+) $right );
+        expr!( $($rest)* );
+    };
+    () => {};
 }
 
 fn expression(tokens: &mut VecDeque<Token>) -> Option<Expr> {
     equality(tokens)
 }
 
-binary_expr! {
-    equality -> comparison (BangEqual, EqualEqual) comparison
-    comparison -> term (Greater, GreaterEqual, Less, LessEqual) term
-    term -> factor (Plus, Minus) factor
-    factor -> unary (Star, Slash) unary
-}
-
-fn unary(tokens: &mut VecDeque<Token>) -> Option<Expr> {
-    let tk = tokens.front()?.kind;
-
-    if tk == TK::Bang || tk == TK::Minus {
-        let op = tokens.pop_front().expect("Should have a token");
-        let right = unary(tokens)?;
-        return Some(Expr::Unary(op, Box::new(right)));
-    }
-
-    primary(tokens)
+expr! {
+    equality   -> comparison (BangEqual, EqualEqual) comparison;
+    comparison -> term (Greater, GreaterEqual, Less, LessEqual) term;
+    term       -> factor (Plus, Minus) factor;
+    factor     -> unary (Star, Slash) unary;
+    unary      -> (Bang, Minus) unary | primary;
 }
 
 fn primary(tokens: &mut VecDeque<Token>) -> Option<Expr> {
