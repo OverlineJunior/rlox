@@ -104,6 +104,11 @@ macro_rules! expr {
     () => {};
 }
 
+// Each function in the grammar will attempt to generate a kind of expression of its name or
+// any kind of expression below it. The later the function is defined, the higher its priority.
+// Take factor for example: if the current token can be parsed as a factor, a factor expression
+// is generated. If not, it will try, in order, unary, group and then literal. Since factor is
+// below term, factor has the higher priority.
 expr! {
     expression -> equality
     equality   -> comparison (BangEqual, EqualEqual) comparison
