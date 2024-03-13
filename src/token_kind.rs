@@ -68,6 +68,17 @@ impl TokenKind {
         Some(kind)
     }
 
+    pub fn is_lit(&self) -> bool {
+        matches!(
+            self,
+            TokenKind::String
+                | TokenKind::Number
+                | TokenKind::True
+                | TokenKind::False
+                | TokenKind::Nil
+        )
+    }
+
     pub fn is_stmt(&self) -> bool {
         matches!(
             self,
@@ -81,5 +92,4 @@ impl TokenKind {
                 | TokenKind::Return
         )
     }
-
 }
