@@ -4,7 +4,7 @@ pub enum Expr {
     Literal(Literal),
     Unary(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
-    Group(Token, Box<Expr>, Token),
+    Group(Box<Expr>),
 }
 
 impl ToString for Expr {
@@ -15,7 +15,7 @@ impl ToString for Expr {
             Expr::Binary(l, op, r) => {
                 format!("({} {} {})", op.lexeme, l.to_string(), r.to_string())
             }
-            Expr::Group(l, expr, r) => format!("({}{}{})", l.lexeme, expr.to_string(), r.lexeme),
+            Expr::Group(expr) => format!("(group {})", expr.to_string()),
         }
     }
 }
@@ -33,11 +33,7 @@ mod test {
                 Box::new(Expr::Literal(Literal::Number(123.0))),
             )),
             Token::symbol(TK::Star, "*".into(), 1),
-            Box::new(Expr::Group(
-                Token::symbol(TK::LeftParenthesis, "(".into(), 1),
-                Box::new(Expr::Literal(Literal::Number(45.67))),
-                Token::symbol(TK::RightParenthesis, ")".into(), 1),
-            )),
+            Box::new(Expr::Group(Box::new(Expr::Literal(Literal::Number(45.67))))),
         );
 
         assert_eq!(expr.to_string(), "(* (- 123) (group 45.67))");
