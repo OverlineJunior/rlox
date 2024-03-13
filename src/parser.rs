@@ -4,6 +4,19 @@ use crate::{
     cursor::Cursor, expr::Expr, literal::Literal, token::Token, token_kind::TokenKind as TK,
 };
 
+// Eats tokens until the next statement boundary.
+// Used to discard tokens likely to cause cascaded errors after a parse error.
+// https://en.wikipedia.org/wiki/Cascading_failure.
+fn sync(tokens: &mut VecDeque<Token>) {
+    while let Some(prev_token) = tokens.pop_front() {
+        let tk = tokens.front().map(|t| t.kind);
+
+        if prev_token.kind == TK::Semicolon || (tk.is_some() && tk.unwrap().is_stmt()) {
+            break;
+        }
+    }
+}
+
 macro_rules! unary_expr {
     ($name:ident -> ($($op:ident),+) $right:ident | $else:ident) => {
         fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
