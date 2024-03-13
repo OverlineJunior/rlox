@@ -19,11 +19,11 @@ fn sync(tokens: &mut VecDeque<Token>) {
 
 macro_rules! unary_expr {
     ($name:ident -> ($($op:ident),+) $right:ident | $else:ident) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
             if tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
-                let op = tokens.pop_front().expect("Should have a token");
+                let op = tokens.pop_front().unwrap();
                 let right = $right(tokens)?;
-                return Some(Expr::Unary(op, Box::new(right)));
+                return Ok(Expr::Unary(op, Box::new(right)));
             }
 
             $else(tokens)
@@ -33,61 +33,62 @@ macro_rules! unary_expr {
 
 macro_rules! binary_expr {
     ($name:ident -> $left:ident ($($op:ident),+) $right:ident) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
             let mut expr = $left(tokens)?;
 
             while tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
-                let op = tokens.front().expect("Should have a token").clone();
-                tokens.pop_front().expect("Should have a token");
+                let op = tokens.front().unwrap().clone();
+                tokens.pop_front().unwrap();
                 let right = $right(tokens)?;
                 expr = Expr::Binary(Box::new(expr), op, Box::new(right));
             }
 
-            Some(expr)
+            Ok(expr)
         }
     };
 }
 
 macro_rules! group_expr {
     ($name:ident -> ($left:ident) $expr:ident ($right:ident) | $else:ident) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
-            if tokens.front()?.kind == TK::$left {
-                let l = tokens.pop_front().expect("Should have a token");
-                let expr = $expr(tokens)?;
-
-                let r = tokens.pop_front().expect("Missing closing parenthesis");
-                assert_eq!(
-                    r.kind,
-                    TK::$right,
-                    "Expected closing parenthesis, got {:#?}",
-                    r
-                );
-
-                return Some(Expr::Group(l, Box::new(expr), r));
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+            match tokens.front() {
+                Some(t) => {
+                    if t.kind != TK::$left {
+                        return $else(tokens);
+                    }
+                }
+                None => return Err("Expected token".into()),
             }
 
-            $else(tokens)
+            let l = tokens.pop_front().unwrap();
+            let expr = $expr(tokens)?;
+
+            match tokens.pop_front() {
+                Some(r) if r.kind == TK::$right => Ok(Expr::Group(l, Box::new(expr), r)),
+                Some(r) => Err(format!("Expected {:?}, got {:?}", TK::$right, r)),
+                None => return Err(format!("Expected {:?}", TK::$right)),
+            }
         }
     };
 }
 
 macro_rules! lit_expr {
     ($name:ident -> ($($lit:ident),+)) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
-            let tok = tokens.pop_front()?;
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+            let tok = tokens.pop_front().ok_or("Expected token")?;
 
             if $(tok.kind == TK::$lit)||+ {
-                return Some(Expr::Literal(tok.literal.expect("Should have a literal")));
+                return Ok(Expr::Literal(tok.literal.expect("Should have a literal")));
             }
 
-            None
+            Err("Expected expression".into())
         }
     };
 }
 
 macro_rules! identity_expr {
     ($name:ident -> $fn:ident) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Option<Expr> {
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
             $fn(tokens)
         }
     };
@@ -133,31 +134,18 @@ expr! {
     literal    -> (True, False, Nil, Number, String)
 }
 
-pub fn parse(tokens: Vec<Token>) -> Option<Expr> {
+pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
     let mut tokens = VecDeque::from(tokens);
     expression(&mut tokens)
 }
 
 mod tests {
-    use crate::{cursor::Cursor, scanner::tokenize, token::Token, token_kind::TokenKind as TK};
-    use std::{collections::VecDeque, fs, path::Path};
-
-    use super::expression;
+    use crate::{parser::parse, scanner::tokenize};
 
     #[test]
     fn test() {
-        // 2 * (4 + -6)
-        let mut tokens = VecDeque::from([
-            Token::new(TK::Number, "2".into(), 2.0.into(), 1),
-            Token::symbol(TK::Star, "*".into(), 1),
-            Token::symbol(TK::LeftParenthesis, "(".into(), 1),
-            Token::new(TK::Number, "4".into(), 4.0.into(), 1),
-            Token::symbol(TK::Plus, "+".into(), 1),
-            Token::symbol(TK::Minus, "-".into(), 1),
-            Token::new(TK::Number, "6".into(), 6.0.into(), 1),
-            Token::symbol(TK::RightParenthesis, ")".into(), 1),
-        ]);
-        let expr = expression(&mut tokens).expect("Should have an expression");
+        let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
+        let expr = parse(tokens).expect("Should give a correct expression");
         assert_eq!(expr.to_string(), "(* 2 (((+ 4 (- 6)))))");
     }
 }
