@@ -11,6 +11,9 @@ mod parser;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
+use parser::parse;
+use scanner::tokenize;
+
 fn read_input() -> String {
     let mut input = String::new();
     io::stdin()
@@ -28,7 +31,12 @@ fn error(line: usize, msg: &str) {
 }
 
 fn run(source: String) -> Result<(), String> {
-    Err("Not yet implemented".to_owned())
+    let tokens = tokenize(source)?;
+    let expr = parse(tokens)?;
+
+    println!("> {:?}", expr.to_string());
+
+    Ok(())
 }
 
 fn run_file(path: &Path) -> Result<(), String> {
@@ -38,12 +46,12 @@ fn run_file(path: &Path) -> Result<(), String> {
 }
 
 fn run_prompt() {
-    loop {
-        print!("> ");
+    println!("rlox (Ctrl+C to exit)");
 
+    loop {
         let input = read_input();
         if input.is_empty() {
-            break;
+            continue;
         }
 
         if let Err(msg) = run(input) {
