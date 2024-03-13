@@ -55,7 +55,11 @@ binary_expr!(
 );
 
 fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    if tokens.front().filter(|c| c.kind == TK::Bang || c.kind == TK::Minus).is_some() {
+    if tokens
+        .front()
+        .filter(|c| c.kind == TK::Bang || c.kind == TK::Minus)
+        .is_some()
+    {
         let op = tokens.pop_front().unwrap();
         let right = unary(tokens)?;
         return Ok(Expr::Unary(op, Box::new(right)));
