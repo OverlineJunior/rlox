@@ -37,6 +37,7 @@ fn sync(tokens: &mut VecDeque<Token>) {
     }
 }
 
+/// Parses a vec of tokens that compose only a single expression.
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
     let mut tokens = VecDeque::from(tokens);
     expression(&mut tokens)
