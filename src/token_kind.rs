@@ -67,4 +67,19 @@ impl TokenKind {
 
         Some(kind)
     }
+
+    pub fn is_stmt(&self) -> bool {
+        matches!(
+            self,
+            TokenKind::Class
+                | TokenKind::Fun
+                | TokenKind::Var
+                | TokenKind::For
+                | TokenKind::If
+                | TokenKind::While
+                | TokenKind::Print
+                | TokenKind::Return
+        )
+    }
+
 }
