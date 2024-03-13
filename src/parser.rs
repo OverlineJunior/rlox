@@ -65,6 +65,17 @@ fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
         return Ok(Expr::Unary(op, Box::new(right)));
     }
 
+    literal(tokens)
+}
+
+fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+    let t = tokens.front().ok_or("Expected token")?;
+
+    if t.kind.is_lit() {
+        let tok = tokens.pop_front().unwrap();
+        return Ok(Expr::Literal(tok.literal.expect("Should have a literal")));
+    }
+
     group(tokens)
 }
 
@@ -72,7 +83,7 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     match tokens.front() {
         Some(t) => {
             if t.kind != TK::LeftParenthesis {
-                return literal(tokens);
+                return Err(format!("Expected (, got {:?}", t.kind));
             }
         }
         None => return Err("Expected token".into()),
@@ -86,16 +97,6 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
         Some(r) => Err(format!("Expected ), got {:?}", r)),
         None => Err("Expected ), got nothing".into()),
     }
-}
-
-fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    let tok = tokens.pop_front().ok_or("Expected token")?;
-
-    if tok.kind.is_lit() {
-        return Ok(Expr::Literal(tok.literal.expect("Should have a literal")));
-    }
-
-    Err("Expected expression".into())
 }
 
 mod tests {
