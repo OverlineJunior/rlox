@@ -9,7 +9,7 @@ macro_rules! binary_expr {
         fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
             let mut expr = $left(tokens)?;
 
-            while tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
+            while tokens.front().is_some_and(|c| { $(c.kind == TK::$op)||+ }) {
                 let op = tokens.pop_front().unwrap().clone();
                 let right = $right(tokens)?;
                 expr = Expr::Binary(Box::new(expr), op, Box::new(right));
@@ -56,8 +56,7 @@ binary_expr!(
 fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     if tokens
         .front()
-        .filter(|c| c.kind == TK::Bang || c.kind == TK::Minus)
-        .is_some()
+        .is_some_and(|t| matches!(t.kind, TK::Bang | TK::Minus))
     {
         let op = tokens.pop_front().unwrap();
         let right = unary(tokens)?;
@@ -80,11 +79,10 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 
 fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     match tokens.front() {
-        Some(t) => {
-            if t.kind != TK::LeftParenthesis {
-                return Err(format!("Expected `(`, got {:?}", t.kind));
-            }
-        }
+        Some(t) if t.kind != TK::LeftParenthesis => {
+            return Err(format!("Expected `(`, got {:?}", t.kind));
+        },
+        Some(_) => (),
         None => return Err("Expected token".into()),
     }
 
