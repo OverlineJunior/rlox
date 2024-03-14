@@ -10,8 +10,7 @@ macro_rules! binary_expr {
             let mut expr = $left(tokens)?;
 
             while tokens.front().filter(|c| { $(c.kind == TK::$op)||+ }).is_some() {
-                let op = tokens.front().unwrap().clone();
-                tokens.pop_front().unwrap();
+                let op = tokens.pop_front().unwrap().clone();
                 let right = $right(tokens)?;
                 expr = Expr::Binary(Box::new(expr), op, Box::new(right));
             }
@@ -83,7 +82,7 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     match tokens.front() {
         Some(t) => {
             if t.kind != TK::LeftParenthesis {
-                return Err(format!("Expected (, got {:?}", t.kind));
+                return Err(format!("Expected `(`, got {:?}", t.kind));
             }
         }
         None => return Err("Expected token".into()),
@@ -94,8 +93,8 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 
     match tokens.pop_front() {
         Some(r) if r.kind == TK::RightParenthesis => Ok(Expr::Group(Box::new(expr))),
-        Some(r) => Err(format!("Expected ), got {:?}", r)),
-        None => Err("Expected ), got nothing".into()),
+        Some(r) => Err(format!("Expected closing `)`, got {:?}", r.kind)),
+        None => Err("Expected closing `)`".into()),
     }
 }
 
@@ -104,7 +103,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
+        let tokens = tokenize("2 +".into()).expect("Should tokenize successfuly");
         let expr = parse(tokens).expect("Should give a correct expression");
         assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
     }
