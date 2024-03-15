@@ -87,7 +87,9 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 
     if t.kind.is_lit() {
         let tok = tokens.pop_front().unwrap();
-        return Ok(Expr::Literal(tok.literal.unwrap_or_else(|| panic!("Expected token `{:?}` to have a literal", tok.kind))));
+        return Ok(Expr::Literal(tok.literal.unwrap_or_else(|| {
+            panic!("Expected token `{:?}` to have a literal", tok.kind)
+        })));
     }
 
     group(tokens)
@@ -132,8 +134,8 @@ fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
             } else {
                 format!("{:?} cannot be turned into an expression", t.kind)
             }
-        },
-        None => "Expected token".into()
+        }
+        None => "Expected token".into(),
     }
 }
 
@@ -147,21 +149,33 @@ mod tests {
 
     #[test]
     fn test_arithmetic() {
-        assert_eq!(make_expr("2 * (4 + -6)").to_string(), "(* 2 (group (+ 4 (- 6))))");
+        assert_eq!(
+            make_expr("2 * (4 + -6)").to_string(),
+            "(* 2 (group (+ 4 (- 6))))"
+        );
     }
 
     #[test]
     fn test_eq() {
-        assert_eq!(make_expr("true == !!!false").to_string(), "(== true (! (! (! false))))");
+        assert_eq!(
+            make_expr("true == !!!false").to_string(),
+            "(== true (! (! (! false))))"
+        );
     }
 
     #[test]
     fn test_comp() {
-        assert_eq!(make_expr("1 + 1 < 2 * 2").to_string(), "(< (+ 1 1) (* 2 2))");
+        assert_eq!(
+            make_expr("1 + 1 < 2 * 2").to_string(),
+            "(< (+ 1 1) (* 2 2))"
+        );
     }
 
     #[test]
     fn test_ternary() {
-        assert_eq!(make_expr("0 ? 1 ? 2 : 3 : 4").to_string(), "(0 ? (1 ? 2 : 3) : 4)");
+        assert_eq!(
+            make_expr("0 ? 1 ? 2 : 3 : 4").to_string(),
+            "(0 ? (1 ? 2 : 3) : 4)"
+        );
     }
 }
