@@ -131,6 +131,11 @@ mod tests {
     }
 
     #[test]
+    fn test_comp() {
+        assert_eq!(make_expr("1 + 1 < 2 * 2").to_string(), "(< (+ 1 1) (* 2 2))");
+    }
+
+    #[test]
     fn test_ternary() {
         assert_eq!(make_expr("0 ? 1 ? 2 : 3 : 4").to_string(), "(0 ? (1 ? 2 : 3) : 4)");
     }
