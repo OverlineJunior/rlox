@@ -162,7 +162,6 @@ mod tests {
 
     #[test]
     fn test_ternary() {
-        make_expr("hello");
         assert_eq!(make_expr("0 ? 1 ? 2 : 3 : 4").to_string(), "(0 ? (1 ? 2 : 3) : 4)");
     }
 }
