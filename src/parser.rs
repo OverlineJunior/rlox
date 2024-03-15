@@ -94,21 +94,46 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 }
 
 fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    match tokens.front() {
-        Some(t) if t.kind != TK::LeftParenthesis => {
-            return Err(format!("Expected `(`, got {:?}", t.kind));
-        },
-        Some(_) => (),
-        None => return Err("Expected token".into()),
+    if tokens.front().is_none() {
+        return Err("Expected token".into());
+    } else if tokens.front().unwrap().kind != TK::LeftParenthesis {
+        return Err(last_parse_error(tokens));
     }
 
-    let l = tokens.pop_front().unwrap();
+    // The opening parenthesis.
+    tokens.pop_front();
+
     let expr = expression(tokens)?;
 
     match tokens.pop_front() {
         Some(r) if r.kind == TK::RightParenthesis => Ok(Expr::Group(Box::new(expr))),
         Some(r) => Err(format!("Expected closing `)`, got {:?}", r.kind)),
         None => Err("Expected closing `)`".into()),
+    }
+}
+
+// Should be ran by the last expression function when there is no more parseable expressions.
+fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
+    match tokens.pop_front() {
+        Some(t) => {
+            if matches!(
+                t.kind,
+                TK::BangEqual
+                    | TK::EqualEqual
+                    | TK::Greater
+                    | TK::GreaterEqual
+                    | TK::Less
+                    | TK::LessEqual
+                    | TK::Plus
+                    | TK::Slash
+                    | TK::Star
+            ) {
+                format!("Missing left-hand operand for operator {:?}", t.kind)
+            } else {
+                format!("{:?} cannot be turned into an expression", t.kind)
+            }
+        },
+        None => "Expected token".into()
     }
 }
 
@@ -137,6 +162,7 @@ mod tests {
 
     #[test]
     fn test_ternary() {
+        make_expr("hello");
         assert_eq!(make_expr("0 ? 1 ? 2 : 3 : 4").to_string(), "(0 ? (1 ? 2 : 3) : 4)");
     }
 }
