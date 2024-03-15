@@ -113,12 +113,26 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 }
 
 mod tests {
-    use crate::{parser::parse, scanner::tokenize};
+    use crate::{expr::Expr, parser::parse, scanner::tokenize};
+
+    fn make_expr(s: &str) -> Expr {
+        let tokens = tokenize(s.into()).expect("Should tokenize successfuly");
+        parse(tokens).expect("Should give a correct expression")
+    }
 
     #[test]
-    fn test() {
-        let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
-        let expr = parse(tokens).expect("Should give a correct expression");
-        assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
+    fn test_arithmetic() {
+        assert_eq!(make_expr("2 * (4 + -6)").to_string(), "(* 2 (group (+ 4 (- 6))))");
+    }
+
+    // TODO! Fix this test.
+    #[test]
+    fn test_eq() {
+        assert_eq!(make_expr("true == false or true = !false").to_string(), "(or (== true false) (== true (!false)))");
+    }
+
+    #[test]
+    fn test_ternary() {
+        assert_eq!(make_expr("0 ? 1 ? 2 : 3 : 4").to_string(), "(0 ? (1 ? 2 : 3) : 4)");
     }
 }
