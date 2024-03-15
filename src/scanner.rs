@@ -1,7 +1,5 @@
 use crate::{
-    string_cursor::{StringCursor, EOF},
-    token::Token,
-    token_kind::TokenKind as TK,
+    literal::Literal, string_cursor::{StringCursor, EOF}, token::Token, token_kind::TokenKind as TK
 };
 
 fn is_whitespace(c: char) -> bool {
@@ -187,7 +185,19 @@ impl StringCursor {
 
         let lexeme = &self.string_since_checkpoint();
         let kind = TK::keyword_from(lexeme).unwrap_or(TK::Identifier);
-        Some(Token::symbol(kind, lexeme.into(), self.line()))
+
+        let lit = match kind {
+            TK::True => Some(Literal::Bool(true)),
+            TK::False => Some(Literal::Bool(false)),
+            TK::Nil => Some(Literal::Nil),
+            _ => None,
+        };
+
+        if let Some(l) = lit {
+            Some(Token::new(kind, lexeme.into(), l, self.line()))
+        } else {
+            Some(Token::symbol(kind, lexeme.into(), self.line()))
+        }
     }
 
     fn skip_line_comment(&mut self) {

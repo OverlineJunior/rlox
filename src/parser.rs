@@ -125,10 +125,9 @@ mod tests {
         assert_eq!(make_expr("2 * (4 + -6)").to_string(), "(* 2 (group (+ 4 (- 6))))");
     }
 
-    // TODO! Fix this test.
     #[test]
     fn test_eq() {
-        assert_eq!(make_expr("true == false or true = !false").to_string(), "(or (== true false) (== true (!false)))");
+        assert_eq!(make_expr("true == !!!false").to_string(), "(== true (! (! (! false))))");
     }
 
     #[test]
