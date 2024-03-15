@@ -130,7 +130,7 @@ fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
                     | TK::Slash
                     | TK::Star
             ) {
-                format!("Missing left-hand operand for operator {:?}", t.kind)
+                format!("Expected left-hand operand for operator {:?}", t.kind)
             } else {
                 format!("{:?} cannot be turned into an expression", t.kind)
             }
