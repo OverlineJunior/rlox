@@ -39,6 +39,8 @@ pub enum TokenKind {
     Var,
     While,
     Eof,
+    Question,
+    Colon,
 }
 
 impl TokenKind {

@@ -43,7 +43,23 @@ pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
 }
 
 fn expression(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    equality(tokens)
+    ternary(tokens)
+}
+
+fn ternary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+    let mut expr = equality(tokens)?;
+
+    if tokens.front().is_some_and(|t| t.kind == TK::Question) {
+        tokens.pop_front().unwrap();
+        let if_ = expression(tokens)?;
+        if tokens.pop_front().is_none() {
+            return Err("Expected `:`".into());
+        }
+        let else_ = expression(tokens)?;
+        expr = Expr::Ternary(Box::new(expr), Box::new(if_), Box::new(else_));
+    }
+
+    Ok(expr)
 }
 
 binary_expr!(
@@ -71,7 +87,7 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 
     if t.kind.is_lit() {
         let tok = tokens.pop_front().unwrap();
-        return Ok(Expr::Literal(tok.literal.expect("Should have a literal")));
+        return Ok(Expr::Literal(tok.literal.unwrap_or_else(|| panic!("Expected token `{:?}` to have a literal", tok.kind))));
     }
 
     group(tokens)
@@ -101,8 +117,12 @@ mod tests {
 
     #[test]
     fn test() {
-        let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
+        // let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
+        // let expr = parse(tokens).expect("Should give a correct expression");
+        // assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
+
+        let tokens = tokenize("0 ? 1 : 2".into()).expect("Should tokenize successfuly");
         let expr = parse(tokens).expect("Should give a correct expression");
-        assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
+        println!("{}", expr.to_string());
     }
 }

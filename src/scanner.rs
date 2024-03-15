@@ -55,6 +55,8 @@ impl StringCursor {
             '-' => TK::Minus,
             ';' => TK::Semicolon,
             '*' => TK::Star,
+            '?' => TK::Question,
+            ':' => TK::Colon,
 
             // Double lexeme.
             '!' => {
