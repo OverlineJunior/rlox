@@ -117,12 +117,8 @@ mod tests {
 
     #[test]
     fn test() {
-        // let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
-        // let expr = parse(tokens).expect("Should give a correct expression");
-        // assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
-
-        let tokens = tokenize("0 ? 1 : 2".into()).expect("Should tokenize successfuly");
+        let tokens = tokenize("2 * (4 + -6)".into()).expect("Should tokenize successfuly");
         let expr = parse(tokens).expect("Should give a correct expression");
-        println!("{}", expr.to_string());
+        assert_eq!(expr.to_string(), "(* 2 (group (+ 4 (- 6))))");
     }
 }
