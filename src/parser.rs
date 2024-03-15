@@ -116,27 +116,26 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
 
 // Should be ran by the last expression function when there is no more parseable expressions.
 fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
-    match tokens.pop_front() {
-        Some(t) => {
-            if matches!(
-                t.kind,
-                TK::BangEqual
-                    | TK::EqualEqual
-                    | TK::Greater
-                    | TK::GreaterEqual
-                    | TK::Less
-                    | TK::LessEqual
-                    | TK::Plus
-                    | TK::Slash
-                    | TK::Star
-            ) {
-                format!("Expected left-hand operand for operator {:?}", t.kind)
-            } else {
-                format!("{:?} cannot be turned into an expression", t.kind)
-            }
+    if let Some(t) = tokens.pop_front() {
+        return if matches!(
+            t.kind,
+            TK::BangEqual
+                | TK::EqualEqual
+                | TK::Greater
+                | TK::GreaterEqual
+                | TK::Less
+                | TK::LessEqual
+                | TK::Plus
+                | TK::Slash
+                | TK::Star
+        ) {
+            format!("Expected left-hand operand for operator {:?}", t.kind)
+        } else {
+            format!("{:?} cannot be turned into an expression", t.kind)
         }
-        None => "Expected token".into(),
     }
+
+    "Expected token".into()
 }
 
 mod tests {
