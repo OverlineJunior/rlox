@@ -1,12 +1,17 @@
 use std::collections::VecDeque;
 
 use crate::{
-    cursor::Cursor, expr::Expr, literal::Literal, token::Token, token_kind::TokenKind as TK,
+    cursor::Cursor,
+    error::ParseError::{self, *},
+    expr::Expr,
+    literal::Literal,
+    token::Token,
+    token_kind::TokenKind as TK,
 };
 
 macro_rules! binary_expr {
     (fn $name:ident = $left:ident ($($op:ident),+) $right:ident $($rest:tt)*) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
             let mut expr = $left(tokens)?;
 
             while tokens.front().is_some_and(|c| { $(c.kind == TK::$op)||+ }) {
@@ -37,24 +42,41 @@ fn sync(tokens: &mut VecDeque<Token>) {
 }
 
 /// Parses a vec of tokens that compose only a single expression.
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Expr, ParseError> {
     let mut tokens = VecDeque::from(tokens);
     expression(&mut tokens)
 }
 
-fn expression(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+fn expression(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     ternary(tokens)
 }
 
-fn ternary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+fn ternary(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     let mut expr = equality(tokens)?;
 
     if tokens.front().is_some_and(|t| t.kind == TK::Question) {
-        tokens.pop_front().unwrap();
+        let question = tokens.pop_front().unwrap();
         let if_ = expression(tokens)?;
-        if tokens.pop_front().is_none() {
-            return Err("Expected `:`".into());
+
+        // The colon.
+        match tokens.pop_front() {
+            Some(t) if t.kind != TK::Colon => {
+                return Err(ExpectedToken {
+                    expected: TK::Colon,
+                    got: Some(t.kind),
+                    line: t.line,
+                })
+            }
+            None => {
+                return Err(ExpectedToken {
+                    expected: TK::Colon,
+                    got: None,
+                    line: question.line,
+                })
+            }
+            _ => (),
         }
+
         let else_ = expression(tokens)?;
         expr = Expr::Ternary(Box::new(expr), Box::new(if_), Box::new(else_));
     }
@@ -69,7 +91,7 @@ binary_expr!(
     fn factor = unary (Star, Slash) unary
 );
 
-fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
+fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     if tokens
         .front()
         .is_some_and(|t| matches!(t.kind, TK::Bang | TK::Minus))
@@ -82,8 +104,9 @@ fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     literal(tokens)
 }
 
-fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    let t = tokens.front().ok_or("Expected token")?;
+fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+    // TODO! Add actual line number to the error, which will require the last line to be known.
+    let t = tokens.front().ok_or(ExpectedAnyToken { line: 0 })?;
 
     if t.kind.is_lit() {
         let tok = tokens.pop_front().unwrap();
@@ -95,27 +118,41 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
     group(tokens)
 }
 
-fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, String> {
-    if tokens.front().is_none() {
-        return Err("Expected token".into());
-    } else if tokens.front().unwrap().kind != TK::LeftParenthesis {
-        return Err(last_parse_error(tokens));
-    }
-
+fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     // The opening parenthesis.
-    tokens.pop_front();
+    match tokens.front() {
+        Some(t) if t.kind == TK::LeftParenthesis => (),
+        Some(t) => return Err(last_parse_error(tokens)),
+        None => {
+            return Err(ExpectedToken {
+                expected: TK::LeftParenthesis,
+                got: None,
+                // TODO! Add actual line number to the error, which will require the last line to be known.
+                line: 0,
+            });
+        }
+    };
 
+    let opening = tokens.pop_front().unwrap();
     let expr = expression(tokens)?;
 
     match tokens.pop_front() {
         Some(r) if r.kind == TK::RightParenthesis => Ok(Expr::Group(Box::new(expr))),
-        Some(r) => Err(format!("Expected closing `)`, got {:?}", r.kind)),
-        None => Err("Expected closing `)`".into()),
+        Some(r) => Err(ExpectedToken {
+            expected: TK::RightParenthesis,
+            got: Some(r.kind),
+            line: r.line,
+        }),
+        None => Err(ExpectedToken {
+            expected: TK::RightParenthesis,
+            got: None,
+            line: opening.line,
+        }),
     }
 }
 
 // Should be ran by the last expression function when there is no more parseable expressions.
-fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
+fn last_parse_error(tokens: &mut VecDeque<Token>) -> ParseError {
     if let Some(t) = tokens.pop_front() {
         return if matches!(
             t.kind,
@@ -129,13 +166,20 @@ fn last_parse_error(tokens: &mut VecDeque<Token>) -> String {
                 | TK::Slash
                 | TK::Star
         ) {
-            format!("Expected left-hand operand for operator {:?}", t.kind)
+            ExpectedAnyLeftOperand {
+                operator: t.kind,
+                line: t.line,
+            }
         } else {
-            format!("{:?} cannot be turned into an expression", t.kind)
-        }
+            NotParseable {
+                token: t.kind,
+                line: t.line,
+            }
+        };
     }
 
-    "Expected token".into()
+    // TODO! Add actual line number to the error, which will require the last line to be known.
+    ExpectedAnyToken { line: 0 }
 }
 
 mod tests {
