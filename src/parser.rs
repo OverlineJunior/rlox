@@ -1,21 +1,18 @@
-use std::collections::VecDeque;
-
 use crate::{
     cursor::Cursor,
     error::ParseError::{self, *},
     expr::Expr,
-    literal::Literal,
     token::Token,
     token_kind::TokenKind as TK,
 };
 
 macro_rules! binary_expr {
     (fn $name:ident = $left:ident ($($op:ident),+) $right:ident $($rest:tt)*) => {
-        fn $name(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+        fn $name(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
             let mut expr = $left(tokens)?;
 
-            while tokens.front().is_some_and(|c| { $(c.kind == TK::$op)||+ }) {
-                let op = tokens.pop_front().unwrap().clone();
+            while tokens.current().is_some_and(|c| { $(c.kind == TK::$op)||+ }) {
+                let op = tokens.eat().unwrap().clone();
                 let right = $right(tokens)?;
                 expr = Expr::Binary(Box::new(expr), op, Box::new(right));
             }
@@ -31,9 +28,9 @@ macro_rules! binary_expr {
 // Eats tokens until the next statement boundary.
 // Used to discard tokens likely to cause cascaded errors after a parse error.
 // https://en.wikipedia.org/wiki/Cascading_failure.
-fn sync(tokens: &mut VecDeque<Token>) {
-    while let Some(prev_token) = tokens.pop_front() {
-        let tk = tokens.front().map(|t| t.kind);
+fn sync(tokens: &mut Cursor<Token>) {
+    while let Some(prev_token) = tokens.eat() {
+        let tk = tokens.current().map(|t| t.kind);
 
         if prev_token.kind == TK::Semicolon || (tk.is_some() && tk.unwrap().is_stmt()) {
             break;
@@ -43,23 +40,23 @@ fn sync(tokens: &mut VecDeque<Token>) {
 
 /// Parses a vec of tokens that compose only a single expression.
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, ParseError> {
-    let mut tokens = VecDeque::from(tokens);
+    let mut tokens = Cursor::new(tokens);
     expression(&mut tokens)
 }
 
-fn expression(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     ternary(tokens)
 }
 
-fn ternary(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+fn ternary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     let mut expr = equality(tokens)?;
 
-    if tokens.front().is_some_and(|t| t.kind == TK::Question) {
-        let question = tokens.pop_front().unwrap();
+    if tokens.current().is_some_and(|t| t.kind == TK::Question) {
+        let question = tokens.eat().unwrap();
         let if_ = expression(tokens)?;
 
         // The colon.
-        match tokens.pop_front() {
+        match tokens.eat() {
             Some(t) if t.kind != TK::Colon => {
                 return Err(ExpectedToken {
                     expected: TK::Colon,
@@ -91,12 +88,12 @@ binary_expr!(
     fn factor = unary (Star, Slash) unary
 );
 
-fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+fn unary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     if tokens
-        .front()
+        .current()
         .is_some_and(|t| matches!(t.kind, TK::Bang | TK::Minus))
     {
-        let op = tokens.pop_front().unwrap();
+        let op = tokens.eat().unwrap();
         let right = unary(tokens)?;
         return Ok(Expr::Unary(op, Box::new(right)));
     }
@@ -104,12 +101,12 @@ fn unary(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     literal(tokens)
 }
 
-fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+fn literal(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     // TODO! Add actual line number to the error, which will require the last line to be known.
-    let t = tokens.front().ok_or(ExpectedAnyToken { line: 0 })?;
+    let t = tokens.current().ok_or(ExpectedAnyToken { line: 0 })?;
 
     if t.kind.is_lit() {
-        let tok = tokens.pop_front().unwrap();
+        let tok = tokens.eat().unwrap();
         return Ok(Expr::Literal(tok.literal.unwrap_or_else(|| {
             panic!("Expected token `{:?}` to have a literal", tok.kind)
         })));
@@ -118,9 +115,9 @@ fn literal(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
     group(tokens)
 }
 
-fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
+fn group(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     // The opening parenthesis.
-    match tokens.front() {
+    match tokens.current() {
         Some(t) if t.kind == TK::LeftParenthesis => (),
         Some(t) => return Err(last_parse_error(tokens)),
         None => {
@@ -133,10 +130,10 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
         }
     };
 
-    let opening = tokens.pop_front().unwrap();
+    let opening = tokens.eat().unwrap();
     let expr = expression(tokens)?;
 
-    match tokens.pop_front() {
+    match tokens.eat() {
         Some(r) if r.kind == TK::RightParenthesis => Ok(Expr::Group(Box::new(expr))),
         Some(r) => Err(ExpectedToken {
             expected: TK::RightParenthesis,
@@ -152,8 +149,8 @@ fn group(tokens: &mut VecDeque<Token>) -> Result<Expr, ParseError> {
 }
 
 // Should be ran by the last expression function when there is no more parseable expressions.
-fn last_parse_error(tokens: &mut VecDeque<Token>) -> ParseError {
-    if let Some(t) = tokens.pop_front() {
+fn last_parse_error(tokens: &mut Cursor<Token>) -> ParseError {
+    if let Some(t) = tokens.eat() {
         return if matches!(
             t.kind,
             TK::BangEqual
