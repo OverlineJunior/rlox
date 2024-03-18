@@ -13,17 +13,13 @@ impl<T: Clone> Cursor<T> {
         }
     }
 
-	/// Returns the value before the one currently being pointed at. Panics if the cursor is at the start of the source.
-    pub fn prev(&self) -> T {
-        assert!(
-            self.position > 0,
-            "Cannot go back from the start of the source"
-        );
+	/// Returns the value before the one currently being pointed at or None if the cursor is at the start of the source.
+    pub fn prev(&self) -> Option<T> {
+		if self.position == 0 {
+			return None;
+		}
 
-        self.source
-            .get(self.position - 1)
-            .expect("Previous value should always exist")
-			.clone()
+        self.source.get(self.position - 1).cloned()
     }
 
 	/// Returns the value currently being pointed or None if the cursor is at the end of the source.

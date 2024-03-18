@@ -40,6 +40,10 @@ fn sync(tokens: &mut Cursor<Token>) {
 
 /// Parses a vec of tokens that compose only a single expression.
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, ParseError> {
+    if tokens.is_empty() {
+        return Err(EmptyExpression);
+    }
+
     let mut tokens = Cursor::new(tokens);
     expression(&mut tokens)
 }
@@ -102,8 +106,14 @@ fn unary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
 }
 
 fn literal(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
-    // TODO! Add actual line number to the error, which will require the last line to be known.
-    let t = tokens.current().ok_or(ExpectedAnyToken { line: 0 })?;
+    // Lazy evaluation is needed, otherwise `tokens.prev` will error. This is why `ok_or` is not used.
+    let t = if let Some(t) = tokens.current() {
+        t
+    } else {
+        return Err(ExpectedAnyToken {
+            line: tokens.prev().expect("`tokens` should not be empty").line,
+        });
+    };
 
     if t.kind.is_lit() {
         let tok = tokens.eat().unwrap();
@@ -124,8 +134,7 @@ fn group(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
             return Err(ExpectedToken {
                 expected: TK::LeftParenthesis,
                 got: None,
-                // TODO! Add actual line number to the error, which will require the last line to be known.
-                line: 0,
+                line: tokens.prev().expect("`tokens` should not be empty").line,
             });
         }
     };
@@ -176,7 +185,9 @@ fn last_parse_error(tokens: &mut Cursor<Token>) -> ParseError {
     }
 
     // TODO! Add actual line number to the error, which will require the last line to be known.
-    ExpectedAnyToken { line: 0 }
+    ExpectedAnyToken {
+        line: tokens.prev().expect("`tokens` should not be empty").line,
+    }
 }
 
 mod tests {

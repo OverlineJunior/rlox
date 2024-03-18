@@ -17,9 +17,9 @@ impl StringCursor {
 		}
 	}
 
-    /// Returns the character before the one currently being pointed to. Panics if the cursor is at the start of the source.
+    /// Returns the character before the one currently being pointed to or EOF if the cursor is at the start of the source.
 	pub fn prev(&self) -> char {
-		self.cursor.prev()
+		self.cursor.prev().unwrap_or(EOF)
 	}
 
     /// Returns the character currently being pointed to or EOF if the cursor is at the end of the source.

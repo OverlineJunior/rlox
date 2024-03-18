@@ -15,6 +15,7 @@ pub enum ParseError {
         operator: TokenKind,
         line: usize,
     },
+    EmptyExpression,
     NotParseable {
         token: TokenKind,
         line: usize,
@@ -40,6 +41,9 @@ impl fmt::Display for ParseError {
             }
             ParseError::ExpectedAnyLeftOperand { operator, line } => {
                 write!(f, "Expected left operand for `{:?}`", operator)
+            }
+            ParseError::EmptyExpression => {
+                write!(f, "Expression cannot be empty")
             }
             ParseError::NotParseable { token, line } => {
                 write!(f, "`{:?}` cannot be turned into an expression", token)
