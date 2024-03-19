@@ -1,6 +1,6 @@
 use crate::{
     cursor::Cursor,
-    error::ParseError::{self, *},
+    parse_error::ParseError::{self, *},
     expr::Expr,
     token::Token,
     token_kind::TokenKind as TK,
