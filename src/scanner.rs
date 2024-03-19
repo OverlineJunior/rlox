@@ -1,5 +1,9 @@
 use crate::{
-    literal::Literal, string_cursor::{StringCursor, EOF}, token::Token, token_kind::TokenKind as TK
+    literal::Literal,
+    scan_error::ScanError::{self, *},
+    string_cursor::{StringCursor, EOF},
+    token::Token,
+    token_kind::TokenKind as TK,
 };
 
 fn is_whitespace(c: char) -> bool {
@@ -14,7 +18,7 @@ fn is_identifier_continue(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_'
 }
 
-pub fn tokenize(source: String) -> Result<Vec<Token>, String> {
+pub fn tokenize(source: String) -> Result<Vec<Token>, ScanError> {
     let mut cursor = StringCursor::new(source);
     let mut tokens: Vec<Token> = Vec::new();
 
@@ -33,7 +37,7 @@ impl StringCursor {
     /// Attempts to eat the next token.
     /// Returns `None` if at EOF or if no token was found before it
     /// (e.g. trailing whitespace at the end).
-    pub fn eat_token(&mut self) -> Result<Option<Token>, String> {
+    pub fn eat_token(&mut self) -> Result<Option<Token>, ScanError> {
         self.set_checkpoint();
 
         if self.is_eof() {
@@ -112,7 +116,7 @@ impl StringCursor {
             // Ignore whitespace.
             c if is_whitespace(c) => return self.eat_token(),
 
-            c => return Err(format!("Unexpected character `{}`", c)),
+            c => return Err(UnexpectedChar { ch: c, line: self.line() }),
         };
 
         Ok(Some(Token::symbol(
@@ -122,7 +126,7 @@ impl StringCursor {
         )))
     }
 
-    fn eat_string_token(&mut self) -> Result<Option<Token>, String> {
+    fn eat_string_token(&mut self) -> Result<Option<Token>, ScanError> {
         assert_eq!(
             self.prev(),
             '"',
@@ -132,7 +136,7 @@ impl StringCursor {
         self.eat_while(|c| c != '"' && c != EOF);
 
         if self.is_eof() {
-            return Err("Unterminated string".into());
+            return Err(UnterminatedString { line: self.line() });
         }
 
         // The closing quote.
@@ -148,7 +152,7 @@ impl StringCursor {
         )))
     }
 
-    fn eat_number_token(&mut self) -> Result<Option<Token>, String> {
+    fn eat_number_token(&mut self) -> Result<Option<Token>, ScanError> {
         assert!(
             self.prev().is_ascii_digit(),
             "Should be called after eating the first digit"
@@ -158,7 +162,7 @@ impl StringCursor {
 
         if self.current() == '.' {
             if !self.next().is_ascii_digit() {
-                return Err("Digit expected after dot".into());
+                return Err(ExpectedDigitAfterDot { line: self.line() });
             }
 
             self.eat();

@@ -9,6 +9,7 @@ mod cursor;
 mod string_cursor;
 mod parser;
 mod parse_error;
+mod scan_error;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
@@ -32,8 +33,8 @@ fn error(line: usize, msg: &str) {
 }
 
 fn run(source: String) -> Result<(), String> {
-    let tokens = tokenize(source)?;
-    let expr = parse(tokens).map_err(|_| "TODO! Custom errors for the scanner are yet to be implemented")?;
+    let tokens = tokenize(source).map_err(|_| "TODO! Error type that englobes scan and parse errors yet to be implemented")?;
+    let expr = parse(tokens).map_err(|_| "TODO! Error type that englobes scan and parse errors yet to be implemented")?;
 
     println!("> {:?}", expr.to_string());
 
