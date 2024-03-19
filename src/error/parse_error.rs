@@ -31,22 +31,22 @@ impl fmt::Display for ParseError {
                 line,
             } => {
                 if let Some(got) = got {
-                    write!(f, "Expected `{:?}`, got `{:?}`", expected, got)
+                    write!(f, "[line {line}] Expected `{:?}`, got `{:?}`", expected, got)
                 } else {
-                    write!(f, "Expected `{:?}`", expected)
+                    write!(f, "[line {line}] Expected `{:?}`", expected)
                 }
             }
             ParseError::ExpectedAnyToken { line } => {
-                write!(f, "Expected token")
+                write!(f, "[line {line}] Expected token")
             }
             ParseError::ExpectedAnyLeftOperand { operator, line } => {
-                write!(f, "Expected left operand for `{:?}`", operator)
+                write!(f, "[line {line}] Expected left operand for `{:?}`", operator)
             }
             ParseError::EmptyExpression => {
                 write!(f, "Expression cannot be empty")
             }
             ParseError::NotParseable { token, line } => {
-                write!(f, "`{:?}` cannot be turned into an expression", token)
+                write!(f, "[line {line}] `{:?}` cannot be turned into an expression", token)
             }
         }
     }
