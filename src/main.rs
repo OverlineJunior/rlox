@@ -62,7 +62,6 @@ fn main() {
         Ordering::Greater => panic!("Usage: rlox [script]"),
         Ordering::Equal => match run_file(Path::new(&args[1])) {
             Ok(_) => (),
-            // TODO: Replace 0 with the actual line number.
             Err(err) => eprintln!("Error: {err}"),
         },
         Ordering::Less => run_prompt(),
