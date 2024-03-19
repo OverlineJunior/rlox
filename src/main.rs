@@ -12,6 +12,7 @@ mod error;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
+use error::Error;
 use parser::parse;
 use scanner::tokenize;
 
@@ -23,24 +24,16 @@ fn read_input() -> String {
     input.trim().to_owned()
 }
 
-fn report(line: usize, msg: &str, location: &str) {
-    eprintln!("[line {line}] Error{location}: {msg}");
-}
-
-fn error(line: usize, msg: &str) {
-    report(line, msg, "");
-}
-
-fn run(source: String) -> Result<(), String> {
-    let tokens = tokenize(source).map_err(|_| "TODO! Error type that englobes scan and parse errors yet to be implemented")?;
-    let expr = parse(tokens).map_err(|_| "TODO! Error type that englobes scan and parse errors yet to be implemented")?;
+fn run(source: String) -> Result<(), Error> {
+    let tokens = tokenize(source)?;
+    let expr = parse(tokens)?;
 
     println!("> {:?}", expr.to_string());
 
     Ok(())
 }
 
-fn run_file(path: &Path) -> Result<(), String> {
+fn run_file(path: &Path) -> Result<(), Error> {
     let source =
         fs::read_to_string(path).unwrap_or_else(|_| panic!("Could not open {}", path.display()));
     run(source)
@@ -70,7 +63,7 @@ fn main() {
         Ordering::Equal => match run_file(Path::new(&args[1])) {
             Ok(_) => (),
             // TODO: Replace 0 with the actual line number.
-            Err(msg) => error(0, &msg),
+            Err(err) => eprintln!("Error: {err}"),
         },
         Ordering::Less => run_prompt(),
     }
