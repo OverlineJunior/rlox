@@ -1,6 +1,6 @@
 use crate::{
     literal::Literal,
-    scan_error::ScanError::{self, *},
+    error::scan_error::ScanError::{self, *},
     string_cursor::{StringCursor, EOF},
     token::Token,
     token_kind::TokenKind as TK,
