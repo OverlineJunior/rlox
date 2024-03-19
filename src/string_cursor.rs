@@ -59,7 +59,15 @@ impl StringCursor {
 
     /// Eats the current character and returns it. Returns EOF if the cursor is at the end of the source.
 	pub fn eat(&mut self) -> char {
-		self.cursor.eat().unwrap_or(EOF)
+		if let Some(c) = self.cursor.eat() {
+			if c == '\n' {
+				self.line += 1;
+			}
+
+			return c;
+		}
+
+		EOF
 	}
 
     /// Repeatedly eats characters while the predicate returns true. Returns the characters eaten.
