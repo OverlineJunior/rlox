@@ -57,9 +57,14 @@ impl ToString for Expr {
             Expr::Unary(op, r) => format!("({} {})", op.lexeme, r.to_string()),
             Expr::Binary(l, op, r) => {
                 format!("({} {} {})", op.lexeme, l.to_string(), r.to_string())
-            },
+            }
             Expr::Group(expr) => format!("(group {})", expr.to_string()),
-            Expr::Ternary(expr, if_, else_) => format!("({} ? {} : {})", expr.to_string(), if_.to_string(), else_.to_string()),
+            Expr::Ternary(expr, if_, else_) => format!(
+                "({} ? {} : {})",
+                expr.to_string(),
+                if_.to_string(),
+                else_.to_string()
+            ),
         }
     }
 }
