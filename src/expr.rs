@@ -1,4 +1,4 @@
-use crate::{literal::Literal, token::Token};
+use crate::{literal::Literal, token::Token, token_kind::TokenKind as TK};
 
 pub enum Expr {
     Literal(Literal),
@@ -6,6 +6,48 @@ pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Group(Box<Expr>),
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
+}
+
+impl Expr {
+    fn eval(&self) -> Literal {
+        match self {
+            Self::Literal(lit) => lit.clone(),
+            Self::Group(expr) => expr.eval(),
+
+            Self::Unary(op, r) => match op.kind {
+                TK::Minus => (-r.eval().expect_number()).into(),
+                TK::Bang => (!r.eval().is_truthy()).into(),
+                tk => panic!("`{:?}` is not an unary operator", tk),
+            },
+
+            Self::Binary(l, op, r) => match op.kind {
+                TK::Plus => match (l.eval(), r.eval()) {
+                    (Literal::Number(l), Literal::Number(r)) => (l + r).into(),
+                    (Literal::String(l), Literal::String(r)) => (l + &r).into(),
+                    (l, r) => panic!("Cannot add `{l}` with `{r}`"),
+                },
+
+                TK::Minus => l.eval() - r.eval(),
+                TK::Star => l.eval() * r.eval(),
+                TK::Slash => l.eval() / r.eval(),
+                TK::Greater => (l.eval() > r.eval()).into(),
+                TK::GreaterEqual => (l.eval() >= r.eval()).into(),
+                TK::Less => (l.eval() < r.eval()).into(),
+                TK::LessEqual => (l.eval() <= r.eval()).into(),
+                TK::EqualEqual => (l.eval() == r.eval()).into(),
+                TK::BangEqual => (l.eval() != r.eval()).into(),
+                tk => panic!("`{:?}` is not a binary operator", tk),
+            },
+
+            Self::Ternary(expr, if_, else_) => {
+                if expr.eval() == true.into() {
+                    if_.eval()
+                } else {
+                    else_.eval()
+                }
+            }
+        }
+    }
 }
 
 impl ToString for Expr {
