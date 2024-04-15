@@ -28,8 +28,7 @@ fn run(source: String) -> Result<(), Error> {
     let tokens = tokenize(source)?;
     let expr = parse(tokens)?;
 
-    println!("> {:?}", expr.to_string());
-
+    println!("> {:?}", expr.eval());
     Ok(())
 }
 
