@@ -1,11 +1,24 @@
 use std::fmt;
 
+use crate::{error::runtime_error::RuntimeError, token_kind::TokenKind};
+
 #[derive(Clone, Debug)]
 pub enum Literal {
     Number(f64),
     String(String),
     Bool(bool),
     Nil,
+}
+
+impl Literal {
+    /// Returns `false` for `Nil` and `Bool(false)`.
+    fn is_truthy(&self) -> bool {
+        match self {
+            Literal::Nil => false,
+            Literal::Bool(b) => *b,
+            _ => true,
+        }
+    }
 }
 
 impl From<f64> for Literal {
