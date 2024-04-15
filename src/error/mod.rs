@@ -1,5 +1,6 @@
 pub mod parse_error;
 pub mod scan_error;
+pub mod runtime_error;
 
 use std::fmt;
 
