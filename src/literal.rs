@@ -12,7 +12,7 @@ pub enum Literal {
 
 impl Literal {
     /// Returns `false` for `Nil` and `Bool(false)`.
-    fn is_truthy(&self) -> bool {
+    pub fn is_truthy(&self) -> bool {
         match self {
             Literal::Nil => false,
             Literal::Bool(b) => *b,
