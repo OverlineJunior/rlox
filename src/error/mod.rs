@@ -6,10 +6,12 @@ use std::fmt;
 
 use parse_error::ParseError;
 use scan_error::ScanError;
+use runtime_error::RuntimeError;
 
 pub enum Error {
     Scan(ScanError),
     Parse(ParseError),
+    Runtime(RuntimeError),
 }
 
 impl From<ScanError> for Error {
@@ -24,11 +26,18 @@ impl From<ParseError> for Error {
     }
 }
 
+impl From<RuntimeError> for Error {
+    fn from(err: RuntimeError) -> Self {
+        Error::Runtime(err)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Scan(err) => write!(f, "{err}"),
             Error::Parse(err) => write!(f, "{err}"),
+            Error::Runtime(err) => write!(f, "{err}"),
         }
     }
 }
