@@ -1,14 +1,14 @@
 #![allow(dead_code, unused_variables, unused_imports)]
 
+mod cursor;
+mod error;
 mod expr;
 mod literal;
+mod parser;
 mod scanner;
+mod string_cursor;
 mod token;
 mod token_kind;
-mod cursor;
-mod string_cursor;
-mod parser;
-mod error;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
@@ -28,7 +28,7 @@ fn run(source: String) -> Result<(), Error> {
     let tokens = tokenize(source)?;
     let expr = parse(tokens)?;
 
-    println!("> {:?}", expr.eval());
+    println!("> {:?}", expr.eval()?);
     Ok(())
 }
 
