@@ -32,7 +32,13 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
                 TK::Plus => match (&l, &r) {
                     (Literal::Number(l), Literal::Number(r)) => Ok(Literal::Number(l + r)),
 
-                    (Literal::String(l), Literal::String(r)) => {
+                    // "foo" + "bar", "foo" + 1, ...
+                    (Literal::String(l), r) => {
+                        Ok(Literal::String(format!("{}{}", l, r)))
+                    }
+
+                    // "foo" + "bar", 1 + "bar", ...
+                    (l, Literal::String(r)) => {
                         Ok(Literal::String(format!("{}{}", l, r)))
                     }
 
