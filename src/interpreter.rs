@@ -33,14 +33,10 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
                     (Literal::Number(l), Literal::Number(r)) => Ok(Literal::Number(l + r)),
 
                     // "foo" + "bar", "foo" + 1, ...
-                    (Literal::String(l), r) => {
-                        Ok(Literal::String(format!("{}{}", l, r)))
-                    }
+                    (Literal::String(l), r) => Ok(Literal::String(format!("{}{}", l, r))),
 
                     // "foo" + "bar", 1 + "bar", ...
-                    (l, Literal::String(r)) => {
-                        Ok(Literal::String(format!("{}{}", l, r)))
-                    }
+                    (l, Literal::String(r)) => Ok(Literal::String(format!("{}{}", l, r))),
 
                     _ => Err(bad_bin_ops(op.kind, l, r, op.line)),
                 },
