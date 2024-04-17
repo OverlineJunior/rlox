@@ -9,12 +9,14 @@ mod scanner;
 mod string_cursor;
 mod token;
 mod token_kind;
+mod interpreter;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
 use error::Error;
 use parser::parse;
 use scanner::tokenize;
+use interpreter::interpret;
 
 fn read_input() -> String {
     let mut input = String::new();
@@ -27,8 +29,9 @@ fn read_input() -> String {
 fn run(source: String) -> Result<(), Error> {
     let tokens = tokenize(source)?;
     let expr = parse(tokens)?;
+    let res = interpret(expr)?;
 
-    println!("> {:?}", expr.eval()?);
+    println!("> {:?}", res);
     Ok(())
 }
 
