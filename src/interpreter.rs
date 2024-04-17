@@ -1,5 +1,5 @@
 use crate::{
-    error::runtime_error::{bad_bin_ops, bad_un_op, RuntimeError},
+    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
     expr::Expr,
     literal::Literal,
     token_kind::TokenKind as TK,
@@ -56,7 +56,14 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
                 },
 
                 TK::Slash => match (&l, &r) {
-                    (Literal::Number(l), Literal::Number(r)) => Ok(Literal::Number(l / r)),
+                    (Literal::Number(l), Literal::Number(r)) => {
+                        if r == &0. {
+                            return Err(div_by_zero(Literal::Number(*l), op.line));
+                        }
+
+                        Ok(Literal::Number(l / r))
+                    }
+
                     _ => Err(bad_bin_ops(op.kind, l, r, op.line)),
                 },
 

@@ -15,6 +15,10 @@ pub enum RuntimeError {
         right: Literal,
         line: usize,
     },
+    DivByZero {
+        left: Literal,
+        line: usize,
+    },
 }
 
 pub fn bad_un_op(operator: TokenKind, right: Literal, line: usize) -> RuntimeError {
@@ -37,6 +41,10 @@ pub fn bad_bin_ops(
         right,
         line,
     }
+}
+
+pub fn div_by_zero(left: Literal, line: usize) -> RuntimeError {
+    RuntimeError::DivByZero { left, line }
 }
 
 impl fmt::Display for RuntimeError {
@@ -65,6 +73,10 @@ impl fmt::Display for RuntimeError {
                     "[line {line}] Invalid operands for `{:?}`: `{:?}` and `{:?}`",
                     operator, left, right
                 )
+            }
+
+            RuntimeError::DivByZero { left, line } => {
+                write!(f, "[line {line}] Cannot divide `{:?}` by zero", left)
             }
         }
     }
