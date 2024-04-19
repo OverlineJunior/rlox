@@ -2,8 +2,31 @@ use crate::{
     error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
     expr::Expr,
     literal::Literal,
+    stmt::Stmt,
     token_kind::TokenKind as TK,
 };
+
+/// Executes multiple stataments, possibly causing side effects.
+pub fn interpret(stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
+    for stmt in stmts {
+        execute(stmt)?;
+    }
+
+    Ok(())
+}
+
+/// Executes a single statament tree, possibly causing side effects.
+fn execute(stmt: Stmt) -> Result<(), RuntimeError> {
+    match stmt {
+        Stmt::Expr(expr) => {
+            eval(expr)?;
+        }
+
+        Stmt::Print(expr) => println!("{}", eval(expr)?),
+    };
+
+    Ok(())
+}
 
 /// Evaluates a single expression tree and returns the resulting literal.
 pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
