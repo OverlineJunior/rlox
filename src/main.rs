@@ -17,7 +17,6 @@ use std::{cmp::Ordering, env, fs, io, path::Path};
 use error::Error;
 use parser::parse;
 use scanner::tokenize;
-use interpreter::interpret;
 
 fn read_input() -> String {
     let mut input = String::new();

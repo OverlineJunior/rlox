@@ -6,12 +6,12 @@ use crate::{
 };
 
 /// Evaluates a single expression tree and returns the resulting literal.
-pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
+pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
     match expr {
         Expr::Literal(literal) => Ok(literal.clone()),
 
         Expr::Unary(op, r) => {
-            let r = interpret(*r)?;
+            let r = eval(*r)?;
 
             match op.kind {
                 TK::Minus => match r {
@@ -25,8 +25,8 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
         }
 
         Expr::Binary(l, op, r) => {
-            let l = interpret(*l)?;
-            let r = interpret(*r)?;
+            let l = eval(*l)?;
+            let r = eval(*r)?;
 
             match op.kind {
                 TK::Plus => match (&l, &r) {
@@ -103,15 +103,15 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
             }
         }
 
-        Expr::Group(expr) => interpret(*expr),
+        Expr::Group(expr) => eval(*expr),
 
         Expr::Ternary(expr, if_, else_) => {
-            let cond = interpret(*expr)?;
+            let cond = eval(*expr)?;
 
             if cond.is_truthy() {
-                interpret(*if_)
+                eval(*if_)
             } else {
-                interpret(*else_)
+                eval(*else_)
             }
         }
     }
