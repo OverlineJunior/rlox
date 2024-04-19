@@ -10,6 +10,7 @@ mod string_cursor;
 mod token;
 mod token_kind;
 mod interpreter;
+mod stmt;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
