@@ -15,6 +15,7 @@ mod stmt;
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
 use error::Error;
+use interpreter::interpret;
 use parser::parse;
 use scanner::tokenize;
 
@@ -30,7 +31,7 @@ fn run(source: String) -> Result<(), Error> {
     let tokens = tokenize(source)?;
     let stmts = parse(tokens)?;
 
-    println!("> {:#?}", stmts);
+    interpret(stmts)?;
     Ok(())
 }
 
