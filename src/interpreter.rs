@@ -16,6 +16,7 @@ pub fn interpret(stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
 }
 
 /// Executes a single statament tree, possibly causing side effects.
+/// This is the statement analogue of `eval`.
 fn execute(stmt: Stmt) -> Result<(), RuntimeError> {
     match stmt {
         Stmt::Expr(expr) => {
@@ -29,6 +30,7 @@ fn execute(stmt: Stmt) -> Result<(), RuntimeError> {
 }
 
 /// Evaluates a single expression tree and returns the resulting literal.
+/// This is the expression analogue of `execute`.
 pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
     match expr {
         Expr::Literal(literal) => Ok(literal.clone()),
