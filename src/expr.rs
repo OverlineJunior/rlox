@@ -7,23 +7,30 @@ pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Group(Box<Expr>),
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
+    Variable { name: Token },
 }
 
 impl ToString for Expr {
     fn to_string(&self) -> String {
         match self {
             Expr::Literal(literal) => literal.to_string(),
+
             Expr::Unary(op, r) => format!("({} {})", op.lexeme, r.to_string()),
+
             Expr::Binary(l, op, r) => {
                 format!("({} {} {})", op.lexeme, l.to_string(), r.to_string())
             }
+
             Expr::Group(expr) => format!("(group {})", expr.to_string()),
+
             Expr::Ternary(expr, if_, else_) => format!(
                 "({} ? {} : {})",
                 expr.to_string(),
                 if_.to_string(),
                 else_.to_string()
             ),
+
+            Expr::Variable { name } => format!("(var {})", name.lexeme),
         }
     }
 }
