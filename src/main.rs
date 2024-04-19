@@ -29,10 +29,9 @@ fn read_input() -> String {
 
 fn run(source: String) -> Result<(), Error> {
     let tokens = tokenize(source)?;
-    let expr = parse(tokens)?;
-    let res = interpret(expr)?;
+    let stmts = parse(tokens)?;
 
-    println!("> {:?}", res);
+    println!("> {:#?}", stmts);
     Ok(())
 }
 
