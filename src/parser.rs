@@ -1,5 +1,10 @@
 use crate::{
-    cursor::Cursor, error::parse_error::ParseError::{self, *}, expr::Expr, stmt::Stmt, token::Token, token_kind::TokenKind as TK
+    cursor::Cursor,
+    error::parse_error::ParseError::{self, *},
+    expr::Expr,
+    stmt::Stmt,
+    token::Token,
+    token_kind::TokenKind as TK,
 };
 
 macro_rules! binary_expr {
@@ -40,13 +45,13 @@ pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
     let mut stmts: Vec<Stmt> = vec![];
 
     while tokens.current().is_some() {
-        stmts.push(statement(&mut tokens));
+        stmts.push(statement(&mut tokens)?);
     }
 
     Ok(stmts)
 }
 
-fn statement(tokens: &mut Cursor<Token>) -> Stmt {
+fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     match tokens
         .current()
         .expect("Should not be called with empty cursor")
@@ -57,28 +62,38 @@ fn statement(tokens: &mut Cursor<Token>) -> Stmt {
     }
 }
 
-fn print_stmt(tokens: &mut Cursor<Token>) -> Stmt {
+fn print_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let print = tokens
         .eat()
         .expect("Should be called when print is the current token");
-    let value = expression(tokens).expect("TODO");
+    let value = expression(tokens)?;
 
-    // TODO! Add graceful error handling.
     match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Stmt::Print(value),
-        Some(t) => panic!("Expected ;, got {:?}", t.kind),
-        None => panic!("Expected ;"),
+        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Print(value)),
+        Some(t) => Err(ExpectedSemicolon {
+            got: Some(t.kind),
+            line: t.line,
+        }),
+        None => Err(ExpectedSemicolon {
+            got: None,
+            line: tokens.prev().map(|t| t.line).unwrap_or(0),
+        }),
     }
 }
 
-fn expr_stmt(tokens: &mut Cursor<Token>) -> Stmt {
-    let expr = expression(tokens).expect("TODO");
+fn expr_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    let expr = expression(tokens)?;
 
-    // TODO! Add graceful error handling.
     match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Stmt::Expr(expr),
-        Some(t) => panic!("Expected ;, got {:?}", t.kind),
-        None => panic!("Expected ;"),
+        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Expr(expr)),
+        Some(t) => Err(ExpectedSemicolon {
+            got: Some(t.kind),
+            line: t.line,
+        }),
+        None => Err(ExpectedSemicolon {
+            got: None,
+            line: tokens.prev().map(|t| t.line).unwrap_or(0),
+        }),
     }
 }
 

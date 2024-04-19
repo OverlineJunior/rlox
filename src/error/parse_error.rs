@@ -20,6 +20,10 @@ pub enum ParseError {
         token: TokenKind,
         line: usize,
     },
+    ExpectedSemicolon {
+        got: Option<TokenKind>,
+        line: usize,
+    }
 }
 
 impl fmt::Display for ParseError {
@@ -47,6 +51,13 @@ impl fmt::Display for ParseError {
             }
             ParseError::NotParseable { token, line } => {
                 write!(f, "[line {line}] `{:?}` cannot be turned into an expression", token)
+            }
+            ParseError::ExpectedSemicolon { got, line } => {
+                if let Some(got) = got {
+                    write!(f, "[line {line}] Expected `;`, got `{:?}`", got)
+                } else {
+                    write!(f, "[line {line}] Expected `;`")
+                }
             }
         }
     }
