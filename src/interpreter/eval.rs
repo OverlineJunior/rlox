@@ -1,33 +1,4 @@
-use crate::{
-    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
-    expr::Expr,
-    literal::Literal,
-    stmt::Stmt,
-    token_kind::TokenKind as TK,
-};
-
-/// Executes multiple stataments, possibly causing side effects.
-pub fn interpret(stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
-    for stmt in stmts {
-        execute(stmt)?;
-    }
-
-    Ok(())
-}
-
-/// Executes a single statament tree, possibly causing side effects.
-/// This is the statement analogue of `eval`.
-fn execute(stmt: Stmt) -> Result<(), RuntimeError> {
-    match stmt {
-        Stmt::Expr(expr) => {
-            eval(expr)?;
-        }
-
-        Stmt::Print(expr) => println!("{}", eval(expr)?),
-    };
-
-    Ok(())
-}
+use crate::{error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError}, expr::Expr, literal::Literal, token_kind::TokenKind as TK};
 
 /// Evaluates a single expression tree and returns the resulting literal.
 /// This is the expression analogue of `execute`.
