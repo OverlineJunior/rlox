@@ -1,5 +1,6 @@
 use crate::{literal::Literal, token::Token};
 
+#[derive(Debug)]
 pub enum Expr {
     Literal(Literal),
     Unary(Token, Box<Expr>),
