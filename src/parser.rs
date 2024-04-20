@@ -231,6 +231,15 @@ fn literal(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
         })));
     }
 
+    variable(tokens)
+}
+
+fn variable(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
+    if tokens.current().is_some_and(|t| t.kind == TK::Identifier) {
+        let name = tokens.eat().unwrap();
+        return Ok(Expr::Variable { name });
+    }
+
     group(tokens)
 }
 
