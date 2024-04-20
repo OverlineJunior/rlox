@@ -11,7 +11,7 @@ pub fn execute(stmt: Stmt) -> Result<(), RuntimeError> {
 
         Stmt::Print(expr) => println!("{}", eval(expr)?),
 
-        Stmt::Var { name, init } => todo!(),
+        Stmt::Var { name, init } => todo!("execute"),
     };
 
     Ok(())
