@@ -65,6 +65,7 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 fn print_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let print = tokens
         .eat()
+        .filter(|t| t.kind == TK::Print)
         .expect("Should be called when print is the current token");
     let value = expression(tokens)?;
 
