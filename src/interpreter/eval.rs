@@ -109,6 +109,8 @@ pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
             } else {
                 eval(*else_)
             }
-        }
+        },
+
+        Expr::Variable { name } => todo!(),
     }
 }
