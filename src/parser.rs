@@ -45,10 +45,69 @@ pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
     let mut stmts: Vec<Stmt> = vec![];
 
     while tokens.current().is_some() {
-        stmts.push(statement(&mut tokens)?);
+        // Although on paper a program is a bunch of statements, declaration statements
+        // must be separated because of this specific design choice:
+        // Allowed:     if (foo) print "bar";     (is a statement, all good)
+        // Not allowed: if (foo) var bar = "baz"; (is a declaration, not good)
+        stmts.push(declaration(&mut tokens)?);
     }
 
     Ok(stmts)
+}
+
+fn declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    match tokens
+        .current()
+        .expect("Should not be called with empty cursor")
+        .kind
+    {
+        TK::Var => var_declaration(tokens),
+        _ => statement(tokens),
+    }
+}
+
+fn var_declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    let var = tokens
+        .eat()
+        .filter(|t| t.kind == TK::Var)
+        .expect("Should be called when Var is the current token");
+
+    let name = match tokens.eat() {
+        Some(t) if t.kind == TK::Identifier => t,
+        Some(t) => {
+            return Err(ExpectedToken {
+                expected: TK::Identifier,
+                got: Some(t.kind),
+                line: t.line,
+            })
+        }
+        None => {
+            return Err(ExpectedToken {
+                expected: TK::Identifier,
+                got: None,
+                line: var.line,
+            })
+        }
+    };
+
+    let init = if tokens.current().filter(|t| t.kind == TK::Equal).is_some() {
+        tokens.eat().unwrap();
+        Some(expression(tokens)?)
+    } else {
+        None
+    };
+
+    match tokens.eat() {
+        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Var { name, init }),
+        Some(t) => Err(ExpectedSemicolon {
+            got: Some(t.kind),
+            line: t.line,
+        }),
+        None => Err(ExpectedSemicolon {
+            got: None,
+            line: tokens.prev().map(|t| t.line).unwrap_or(0),
+        }),
+    }
 }
 
 fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
