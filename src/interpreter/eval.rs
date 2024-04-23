@@ -1,13 +1,20 @@
-use crate::{error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError}, expr::Expr, literal::Literal, token_kind::TokenKind as TK};
+use crate::{
+    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
+    expr::Expr,
+    literal::Literal,
+    token_kind::TokenKind as TK,
+};
+
+use super::env::Env;
 
 /// Evaluates a single expression tree and returns the resulting literal.
 /// This is the expression analogue of `execute`.
-pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
+pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
     match expr {
         Expr::Literal(literal) => Ok(literal.clone()),
 
         Expr::Unary(op, r) => {
-            let r = eval(*r)?;
+            let r = eval(*r, env)?;
 
             match op.kind {
                 TK::Minus => match r {
@@ -21,8 +28,8 @@ pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
         }
 
         Expr::Binary(l, op, r) => {
-            let l = eval(*l)?;
-            let r = eval(*r)?;
+            let l = eval(*l, env)?;
+            let r = eval(*r, env)?;
 
             match op.kind {
                 TK::Plus => match (&l, &r) {
@@ -99,17 +106,17 @@ pub fn eval(expr: Expr) -> Result<Literal, RuntimeError> {
             }
         }
 
-        Expr::Group(expr) => eval(*expr),
+        Expr::Group(expr) => eval(*expr, env),
 
         Expr::Ternary(expr, if_, else_) => {
-            let cond = eval(*expr)?;
+            let cond = eval(*expr, env)?;
 
             if cond.is_truthy() {
-                eval(*if_)
+                eval(*if_, env)
             } else {
-                eval(*else_)
+                eval(*else_, env)
             }
-        },
+        }
 
         Expr::Variable { name } => todo!("eval"),
     }
