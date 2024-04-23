@@ -1,17 +1,25 @@
+mod env;
 mod eval;
 mod execute;
-mod env;
 
 use self::{env::Env, execute::execute};
 use crate::{error::runtime_error::RuntimeError, stmt::Stmt};
 
-/// Executes multiple stataments, possibly causing side effects.
-pub fn interpret(stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
-    let mut env = Env::new();
+pub struct Interpreter {
+    env: Env,
+}
 
-    for stmt in stmts {
-        execute(stmt, &mut env)?;
+impl Interpreter {
+    pub fn new() -> Self {
+        Self { env: Env::new() }
     }
 
-    Ok(())
+    /// Executes multiple stataments, possibly causing side effects.
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), RuntimeError> {
+        for stmt in stmts {
+            execute(stmt, &mut self.env)?;
+        }
+
+        Ok(())
+    }
 }
