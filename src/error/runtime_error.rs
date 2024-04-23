@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{literal::Literal, token_kind::TokenKind};
+use crate::{literal::Literal, token::Token, token_kind::TokenKind};
 
 #[derive(Clone)]
 pub enum RuntimeError {
@@ -18,6 +18,9 @@ pub enum RuntimeError {
     DivByZero {
         left: Literal,
         line: usize,
+    },
+    UndefinedVariable {
+        name: Token,
     },
 }
 
@@ -45,6 +48,10 @@ pub fn bad_bin_ops(
 
 pub fn div_by_zero(left: Literal, line: usize) -> RuntimeError {
     RuntimeError::DivByZero { left, line }
+}
+
+pub fn undefined_variable(name: Token) -> RuntimeError {
+    RuntimeError::UndefinedVariable { name }
 }
 
 impl fmt::Display for RuntimeError {
@@ -77,6 +84,10 @@ impl fmt::Display for RuntimeError {
 
             RuntimeError::DivByZero { left, line } => {
                 write!(f, "[line {line}] Cannot divide `{:?}` by zero", left)
+            }
+
+            RuntimeError::UndefinedVariable { name } => {
+                write!(f, "[line {}] Undefined variable `{}`", name.line, name.lexeme)
             }
         }
     }

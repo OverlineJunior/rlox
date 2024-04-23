@@ -1,5 +1,5 @@
 use crate::{
-    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
+    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, undefined_variable, RuntimeError},
     expr::Expr,
     literal::Literal,
     token_kind::TokenKind as TK,
@@ -118,6 +118,8 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
             }
         }
 
-        Expr::Variable { name } => todo!("eval"),
+        Expr::Variable { name } => {
+            env.get(&name.lexeme).ok_or(undefined_variable(name))
+        },
     }
 }

@@ -13,13 +13,13 @@ impl Env {
 		}
 	}
 
-	pub fn get(&self, name: String) -> Option<Literal> {
-		self.bindings.get(&name).cloned()
+	pub fn get(&self, name: &str) -> Option<Literal> {
+		self.bindings.get(name).cloned()
 	}
 
 	/// Returns the overwritten `Literal` if there was one.
 	/// If `value` is `None`, it is defaulted to `Literal::Nil`.
-	pub fn set(&mut self, name: String, value: Option<Literal>) -> Option<Literal> {
-		self.bindings.insert(name, value.unwrap_or(Literal::Nil))
+	pub fn set(&mut self, name: &str, value: Option<Literal>) -> Option<Literal> {
+		self.bindings.insert(name.into(), value.unwrap_or(Literal::Nil))
 	}
 }
