@@ -13,8 +13,8 @@ impl Env {
 		}
 	}
 
-	pub fn get(&self, name: String) -> Option<&Literal> {
-		self.bindings.get(&name)
+	pub fn get(&self, name: String) -> Option<Literal> {
+		self.bindings.get(&name).cloned()
 	}
 
 	/// Returns the overwritten `Literal` if there was one.
