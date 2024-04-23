@@ -1,5 +1,6 @@
 mod eval;
 mod execute;
+mod env;
 
 use self::execute::execute;
 use crate::{error::runtime_error::RuntimeError, stmt::Stmt};
