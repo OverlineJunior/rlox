@@ -8,6 +8,7 @@ use crate::{
 use super::env::Env;
 
 /// Evaluates a single expression tree and returns the resulting literal.
+/// Evaluation can contain side effects, just like executions.
 /// This is the expression analogue of `execute`.
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
     match expr {
@@ -122,7 +123,10 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
             env.get(name.clone()).ok_or(undefined_variable(name))
         },
 
-        // ! TEMP
-        Expr::Assign { name, value } => Ok(Literal::Nil),
+        Expr::Assign { name, value } => {
+            let evaluated = eval(*value, env)?;
+            env.assign(name, evaluated.clone())?;
+            Ok(evaluated)
+        },
     }
 }
