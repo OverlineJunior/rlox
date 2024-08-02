@@ -161,7 +161,6 @@ fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     assignment(tokens)
 }
 
-// TODO! Assignment, page 121.
 fn assignment(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     // Even though we error if expr is not a variable later on, we still search for
     // anything ternary below, as long as it resolves to a variable.
