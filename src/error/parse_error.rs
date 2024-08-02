@@ -23,7 +23,10 @@ pub enum ParseError {
     ExpectedSemicolon {
         got: Option<TokenKind>,
         line: usize,
-    }
+    },
+    BadAssignmentTarget {
+        line: usize,
+    },
 }
 
 impl fmt::Display for ParseError {
@@ -58,6 +61,9 @@ impl fmt::Display for ParseError {
                 } else {
                     write!(f, "[line {line}] Expected `;`")
                 }
+            }
+            ParseError::BadAssignmentTarget { line } => {
+                write!(f, "[line {line}] Invalid assignment target")
             }
         }
     }

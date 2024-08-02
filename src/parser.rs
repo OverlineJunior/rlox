@@ -55,6 +55,10 @@ pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
     Ok(stmts)
 }
 
+// Below are the parsing functions, where each correspond to a specific rule / production in the grammar.
+// They are organized in such a way that the deeper the function is, the higher its precedence,
+// meaning it is evaluated first.
+
 fn declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     match tokens
         .current()
@@ -158,7 +162,30 @@ fn expr_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
-    ternary(tokens)
+    assignment(tokens)
+}
+
+// TODO! Assignment, page 121.
+fn assignment(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
+    // Even though we error if expr is not a variable later on, we still search for
+    // anything ternary below, as long as it resolves to a variable.
+    // This allows things such as: a ? b : c = d and: a.b = c
+    let expr = ternary(tokens)?;
+
+    if tokens.current().is_some_and(|t| t.kind == TK::Equal) {
+        let equal = tokens.eat().unwrap();
+        // We recursively go for another assignment to allow operator chaining (--1).
+        let value = assignment(tokens)?;
+
+        if let Expr::Variable { name } = expr {
+            return Ok(Expr::Assign { name, value: Box::new(value) })
+        } else {
+            // a + b = c errors because a + c does not resolve to a variable.
+            return Err(BadAssignmentTarget { line: equal.line })
+        }
+    }
+
+    Ok(expr)
 }
 
 fn ternary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {

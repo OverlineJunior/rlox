@@ -8,6 +8,7 @@ pub enum Expr {
     Group(Box<Expr>),
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Variable { name: Token },
+    Assign { name: Token, value: Box<Expr> },
 }
 
 impl ToString for Expr {
@@ -31,6 +32,12 @@ impl ToString for Expr {
             ),
 
             Expr::Variable { name } => format!("(var {})", name.lexeme),
+
+            Expr::Assign { name, value } => format!(
+                "(assign {} = {})",
+                name.lexeme,
+                value.to_string(),
+            ),
         }
     }
 }
