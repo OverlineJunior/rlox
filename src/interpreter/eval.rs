@@ -121,5 +121,8 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
         Expr::Variable { name } => {
             env.get(&name.lexeme).ok_or(undefined_variable(name))
         },
+
+        // ! TEMP
+        Expr::Assign { name, value } => Ok(Literal::Nil),
     }
 }

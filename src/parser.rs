@@ -335,6 +335,17 @@ fn last_parse_error(tokens: &mut Cursor<Token>) -> ParseError {
     }
 }
 
+mod tests {
+    use crate::{expr::Expr, parser::parse, scanner::tokenize};
+
+    #[test]
+    fn test() {
+        let tokens = tokenize("a ? b : c = 555;".to_string()).unwrap();
+        let ast = parse(tokens).unwrap();
+        println!("{:#?}", ast);
+    }
+}
+
 // TODO! Update tests based on recent parser changes.
 // mod tests {
 //     use crate::{expr::Expr, parser::parse, scanner::tokenize};
