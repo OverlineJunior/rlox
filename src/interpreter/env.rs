@@ -18,8 +18,7 @@ impl Env {
 	}
 
 	/// Defines a new binding or overwrites the old one, returning it.
-	/// If `value` is `None`, it is defaulted to `Literal::Nil`.
-	pub fn define(&mut self, name: &str, value: Option<Literal>) -> Option<Literal> {
-		self.bindings.insert(name.into(), value.unwrap_or(Literal::Nil))
+	pub fn define(&mut self, name: &str, value: Literal) -> Option<Literal> {
+		self.bindings.insert(name.into(), value)
 	}
 }

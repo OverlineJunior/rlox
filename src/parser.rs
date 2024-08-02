@@ -1,10 +1,5 @@
 use crate::{
-    cursor::Cursor,
-    error::parse_error::ParseError::{self, *},
-    expr::Expr,
-    stmt::Stmt,
-    token::Token,
-    token_kind::TokenKind as TK,
+    cursor::Cursor, error::parse_error::ParseError::{self, *}, expr::Expr, literal::Literal, stmt::Stmt, token::Token, token_kind::TokenKind as TK
 };
 
 macro_rules! binary_expr {
@@ -96,9 +91,10 @@ fn var_declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 
     let init = if tokens.current().filter(|t| t.kind == TK::Equal).is_some() {
         tokens.eat().unwrap();
-        Some(expression(tokens)?)
+        expression(tokens)?
     } else {
-        None
+        // var a; has its value defaulted to Nil.
+        Expr::Literal(Literal::Nil)
     };
 
     match tokens.eat() {

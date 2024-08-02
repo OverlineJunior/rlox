@@ -6,6 +6,6 @@ pub enum Stmt {
 	Print(Expr),
 	Var {
 		name: Token,
-		init: Option<Expr>,
+		init: Expr,
 	},
 }
