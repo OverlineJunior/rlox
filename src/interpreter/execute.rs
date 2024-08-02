@@ -13,7 +13,7 @@ pub fn execute(stmt: Stmt, env: &mut Env) -> Result<(), RuntimeError> {
 
         Stmt::Var { name, init } => {
             let value = eval(init, env)?;
-            env.define(&name.lexeme, value);
+            env.define(name, value);
         }
     };
 

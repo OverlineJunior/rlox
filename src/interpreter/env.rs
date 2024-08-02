@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{literal::Literal, token::Token};
+use crate::{
+    error::runtime_error::{undefined_variable, RuntimeError},
+    literal::Literal,
+    token::Token,
+};
 
 pub struct Env {
     bindings: HashMap<String, Literal>,
@@ -13,25 +17,25 @@ impl Env {
         }
     }
 
-    pub fn get(&self, name: &str) -> Option<Literal> {
-        self.bindings.get(name).cloned()
+    pub fn get(&self, name: Token) -> Option<Literal> {
+        self.bindings.get(&name.lexeme).cloned()
     }
 
     /// Defines a new binding or overwrites the old one, returning it.
-    pub fn define(&mut self, name: &str, value: Literal) -> Option<Literal> {
-        self.bindings.insert(name.into(), value)
+    pub fn define(&mut self, name: Token, value: Literal) -> Option<Literal> {
+        self.bindings.insert(name.lexeme, value)
     }
 
     /// Assigns a value to an already existing binding, returning the old value.
     /// Errors if said binding does not exist.
-    pub fn assign(&mut self, name: &str, value: Literal) -> Result<Literal, ()> {
-        if !self.bindings.contains_key(name) {
-            return Err(());
+    pub fn assign(&mut self, name: Token, value: Literal) -> Result<Literal, RuntimeError> {
+        if !self.bindings.contains_key(&name.lexeme) {
+            return Err(undefined_variable(name));
         }
 
         let old_value = self
             .bindings
-            .insert(name.into(), value)
+            .insert(name.lexeme, value)
             .expect("Should have the key");
 
         Ok(old_value)
