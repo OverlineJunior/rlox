@@ -17,8 +17,13 @@ impl Env {
         }
     }
 
-    pub fn get(&self, name: Token) -> Option<Literal> {
-        self.bindings.get(&name.lexeme).cloned()
+    /// Returns the value bound to ´name´.
+    /// Errors if binding does not exist.
+    pub fn get(&self, name: Token) -> Result<Literal, RuntimeError> {
+        self.bindings
+            .get(&name.lexeme)
+            .ok_or(undefined_variable(name))
+            .cloned()
     }
 
     /// Defines a new binding or overwrites the old one, returning it.

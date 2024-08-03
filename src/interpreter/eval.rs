@@ -120,7 +120,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
         }
 
         Expr::Variable { name } => {
-            env.get(name.clone()).ok_or(undefined_variable(name))
+            env.get(name.clone())
         },
 
         Expr::Assign { name, value } => {
