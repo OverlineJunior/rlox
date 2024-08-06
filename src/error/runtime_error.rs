@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{literal::Literal, token::Token, token_kind::TokenKind};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RuntimeError {
     BadUnOp {
         operator: TokenKind,

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{error::runtime_error::RuntimeError, token_kind::TokenKind};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Literal {
     Number(f64),
     String(String),
