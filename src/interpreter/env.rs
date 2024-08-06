@@ -46,7 +46,6 @@ impl Env {
         self.bindings.insert(name.lexeme, value)
     }
 
-    // TODO! Page 128.
     /// Assigns a value to an already existing binding in the current or above scopes,
     /// returning the old value.
     /// Errors if binding could not be found.
