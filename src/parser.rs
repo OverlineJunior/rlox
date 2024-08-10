@@ -1,5 +1,11 @@
 use crate::{
-    cursor::Cursor, error::parse_error::ParseError::{self, *}, expr::Expr, literal::Literal, stmt::Stmt, token::Token, token_kind::TokenKind as TK
+    cursor::Cursor,
+    error::parse_error::ParseError::{self, *},
+    expr::Expr,
+    literal::Literal,
+    stmt::Stmt,
+    token::Token,
+    token_kind::TokenKind as TK,
 };
 
 macro_rules! binary_expr {
@@ -117,6 +123,7 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         .kind
     {
         TK::Print => print_stmt(tokens),
+        TK::LeftBrace => block(tokens),
         _ => expr_stmt(tokens),
     }
 }
@@ -157,6 +164,33 @@ fn expr_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     }
 }
 
+fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    let left_brace = tokens
+        .eat()
+        .filter(|t| t.kind == TK::LeftBrace)
+        .expect("Should be called when LeftBrace is the current token");
+
+    let mut stmts: Vec<Stmt> = Vec::new();
+
+    while tokens.current().is_some_and(|t| t.kind != TK::RightBrace) {
+        stmts.push(declaration(tokens)?);
+    }
+
+    match tokens.eat() {
+        Some(t) if t.kind == TK::RightBrace => Ok(Stmt::Block { stmts }),
+        Some(t) => Err(ExpectedToken {
+            expected: TK::RightBrace,
+            got: Some(t.kind),
+            line: t.line,
+        }),
+        None => Err(ExpectedToken {
+            expected: TK::RightBrace,
+            got: None,
+            line: tokens.prev().map(|t| t.line).unwrap_or(0),
+        }),
+    }
+}
+
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     assignment(tokens)
 }
@@ -173,10 +207,13 @@ fn assignment(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
         let value = assignment(tokens)?;
 
         if let Expr::Variable { name } = expr {
-            return Ok(Expr::Assign { name, value: Box::new(value) })
+            return Ok(Expr::Assign {
+                name,
+                value: Box::new(value),
+            });
         } else {
             // a + b = c errors because a + c does not resolve to a variable.
-            return Err(BadAssignmentTarget { line: equal.line })
+            return Err(BadAssignmentTarget { line: equal.line });
         }
     }
 
