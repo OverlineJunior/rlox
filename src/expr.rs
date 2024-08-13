@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{literal::Literal, token::Token};
 
 #[derive(Debug)]
@@ -11,33 +13,24 @@ pub enum Expr {
     Assign { name: Token, value: Box<Expr> },
 }
 
-impl ToString for Expr {
-    fn to_string(&self) -> String {
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Literal(literal) => literal.to_string(),
+            Expr::Literal(literal) => write!(f, "{}", literal),
 
-            Expr::Unary(op, r) => format!("({} {})", op.lexeme, r.to_string()),
+            Expr::Unary(op, r) => write!(f, "({} {})", op.lexeme, r),
 
             Expr::Binary(l, op, r) => {
-                format!("({} {} {})", op.lexeme, l.to_string(), r.to_string())
+                write!(f, "({} {} {})", op.lexeme, l, r)
             }
 
-            Expr::Group(expr) => format!("(group {})", expr.to_string()),
+            Expr::Group(expr) => write!(f, "(group {})", expr),
 
-            Expr::Ternary(expr, if_, else_) => format!(
-                "({} ? {} : {})",
-                expr.to_string(),
-                if_.to_string(),
-                else_.to_string()
-            ),
+            Expr::Ternary(expr, if_, else_) => write!(f, "({} ? {} : {})", expr, if_, else_),
 
-            Expr::Variable { name } => format!("(var {})", name.lexeme),
+            Expr::Variable { name } => write!(f, "(var {})", name.lexeme),
 
-            Expr::Assign { name, value } => format!(
-                "(assign {} = {})",
-                name.lexeme,
-                value.to_string(),
-            ),
+            Expr::Assign { name, value } => write!(f, "(assign {} = {})", name.lexeme, value,),
         }
     }
 }
