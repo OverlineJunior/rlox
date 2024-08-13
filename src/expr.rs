@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{literal::Literal, token::Token};
+use crate::{literal::Literal, stmt::Stmt, token::Token};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -11,6 +11,7 @@ pub enum Expr {
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Variable { name: Token },
     Assign { name: Token, value: Box<Expr> },
+    Block { stmts: Vec<Stmt> },
 }
 
 impl Display for Expr {
@@ -31,6 +32,8 @@ impl Display for Expr {
             Expr::Variable { name } => write!(f, "(var {})", name.lexeme),
 
             Expr::Assign { name, value } => write!(f, "(assign {} = {})", name.lexeme, value,),
+
+            Expr::Block { stmts } => write!(f, "(block ...)"),
         }
     }
 }

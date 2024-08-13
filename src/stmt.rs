@@ -8,7 +8,4 @@ pub enum Stmt {
 		name: Token,
 		init: Expr,
 	},
-	Block {
-		stmts: Vec<Stmt>,
-	},
 }

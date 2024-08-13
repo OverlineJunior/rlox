@@ -123,7 +123,6 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         .kind
     {
         TK::Print => print_stmt(tokens),
-        TK::LeftBrace => block(tokens),
         _ => expr_stmt(tokens),
     }
 }
@@ -164,7 +163,7 @@ fn expr_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     }
 }
 
-fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+fn block(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     let left_brace = tokens
         .eat()
         .filter(|t| t.kind == TK::LeftBrace)
@@ -177,7 +176,7 @@ fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     }
 
     match tokens.eat() {
-        Some(t) if t.kind == TK::RightBrace => Ok(Stmt::Block { stmts }),
+        Some(t) if t.kind == TK::RightBrace => Ok(Expr::Block { stmts }),
         Some(t) => Err(ExpectedToken {
             expected: TK::RightBrace,
             got: Some(t.kind),
@@ -192,7 +191,14 @@ fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
-    assignment(tokens)
+    match tokens
+        .current()
+        .expect("Should not be called with empty cursor")
+        .kind
+    {
+        TK::LeftBrace => block(tokens),
+        _ => assignment(tokens),
+    }
 }
 
 fn assignment(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {

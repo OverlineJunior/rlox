@@ -1,11 +1,8 @@
 use crate::{
-    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, undefined_variable, RuntimeError},
-    expr::Expr,
-    literal::Literal,
-    token_kind::TokenKind as TK,
+    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, undefined_variable, RuntimeError}, expr::Expr, literal::Literal, stmt::Stmt, token_kind::TokenKind as TK
 };
 
-use super::env::Env;
+use super::{env::Env, execute::execute};
 
 /// Evaluates a single expression tree and returns the resulting literal.
 /// Evaluation can contain side effects, just like executions.
@@ -127,6 +124,21 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
             let evaluated = eval(*value, env)?;
             env.assign(name, evaluated.clone())?;
             Ok(evaluated)
+        },
+
+        Expr::Block { stmts } => {
+            let mut new_env = Env::new_enclosed(env.clone());
+            let mut last_value = Literal::Nil;
+
+            for stmt in stmts {
+                if let Stmt::Expr(expr) = stmt {
+                    last_value = eval(expr, &mut new_env)?;
+                } else {
+                    execute(stmt, &mut new_env)?;
+                }
+            }
+
+            Ok(last_value)
         },
     }
 }
