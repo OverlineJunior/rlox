@@ -133,10 +133,28 @@ fn print_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         .eat()
         .filter(|t| t.kind == TK::Print)
         .expect("Should be called when print is the current token");
-    let value = expression(tokens)?;
+
+    let mut args: Vec<Expr> = Vec::new();
+    while tokens.current().is_some_and(|t| t.kind != TK::Semicolon) {
+        args.push(expression(tokens)?);
+
+        if let Some(t) = tokens.current() {
+            if t.kind != TK::Semicolon {
+                tokens.eat();
+
+                if t.kind != TK::Comma {
+                    return Err(ExpectedToken {
+                        expected: TK::Comma,
+                        got: Some(t.kind),
+                        line: t.line,
+                    });
+                }
+            }
+        }
+    }
 
     match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Print(value)),
+        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Print(args)),
         Some(t) => Err(ExpectedSemicolon {
             got: Some(t.kind),
             line: t.line,
