@@ -40,7 +40,7 @@ fn sync(tokens: &mut Cursor<Token>) {
     }
 }
 
-/// Parses a vec of tokens that compose only a single expression.
+/// Maps tokens into statements.
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
     let mut tokens = Cursor::new(tokens);
     let mut stmts: Vec<Stmt> = vec![];
