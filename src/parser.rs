@@ -73,28 +73,12 @@ fn declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 
 fn var_declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let var = tokens
-        .eat()
-        .filter(|t| t.kind == TK::Var)
+        .eat_kind(TK::Var)
         .expect("Should be called when Var is the current token");
 
-    let name = match tokens.eat() {
-        Some(t) if t.kind == TK::Identifier => t,
-        Some(t) => {
-            return Err(ExpectedToken {
-                expected: TK::Identifier,
-                got: Some(t.kind),
-                line: t.line,
-            })
-        }
-        None => {
-            return Err(ExpectedToken {
-                expected: TK::Identifier,
-                got: None,
-                line: var.line,
-            })
-        }
-    };
+    let name = tokens.eat_kind(TK::Identifier)?;
 
+    // TODO! Try implementing something like ´tokens.try_eat_kind´.
     let init = if tokens.current().filter(|t| t.kind == TK::Equal).is_some() {
         tokens.eat().unwrap();
         expression(tokens)?
@@ -103,17 +87,9 @@ fn var_declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         Expr::Literal(Literal::Nil)
     };
 
-    match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Var { name, init }),
-        Some(t) => Err(ExpectedSemicolon {
-            got: Some(t.kind),
-            line: t.line,
-        }),
-        None => Err(ExpectedSemicolon {
-            got: None,
-            line: tokens.prev().map(|t| t.line).unwrap_or(0),
-        }),
-    }
+    tokens.eat_kind(TK::Semicolon)?;
+
+    Ok(Stmt::Var { name, init })
 }
 
 fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
@@ -130,65 +106,37 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 
 fn print_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let print = tokens
-        .eat()
-        .filter(|t| t.kind == TK::Print)
+        .eat_kind(TK::Print)
         .expect("Should be called when print is the current token");
+
     let value = expression(tokens)?;
 
-    match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Print(value)),
-        Some(t) => Err(ExpectedSemicolon {
-            got: Some(t.kind),
-            line: t.line,
-        }),
-        None => Err(ExpectedSemicolon {
-            got: None,
-            line: tokens.prev().map(|t| t.line).unwrap_or(0),
-        }),
-    }
+    tokens.eat_kind(TK::Semicolon)?;
+
+    Ok(Stmt::Print(value))
 }
 
 fn expr_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let expr = expression(tokens)?;
 
-    match tokens.eat() {
-        Some(t) if t.kind == TK::Semicolon => Ok(Stmt::Expr(expr)),
-        Some(t) => Err(ExpectedSemicolon {
-            got: Some(t.kind),
-            line: t.line,
-        }),
-        None => Err(ExpectedSemicolon {
-            got: None,
-            line: tokens.prev().map(|t| t.line).unwrap_or(0),
-        }),
-    }
+    tokens.eat_kind(TK::Semicolon)?;
+
+    Ok(Stmt::Expr(expr))
 }
 
 fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     let left_brace = tokens
-        .eat()
-        .filter(|t| t.kind == TK::LeftBrace)
+        .eat_kind(TK::LeftBrace)
         .expect("Should be called when LeftBrace is the current token");
 
     let mut stmts: Vec<Stmt> = Vec::new();
-
     while tokens.current().is_some_and(|t| t.kind != TK::RightBrace) {
         stmts.push(declaration(tokens)?);
     }
 
-    match tokens.eat() {
-        Some(t) if t.kind == TK::RightBrace => Ok(Stmt::Block { stmts }),
-        Some(t) => Err(ExpectedToken {
-            expected: TK::RightBrace,
-            got: Some(t.kind),
-            line: t.line,
-        }),
-        None => Err(ExpectedToken {
-            expected: TK::RightBrace,
-            got: None,
-            line: tokens.prev().map(|t| t.line).unwrap_or(0),
-        }),
-    }
+    tokens.eat_kind(TK::RightBrace)?;
+
+    Ok(Stmt::Block { stmts })
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
@@ -227,26 +175,10 @@ fn ternary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
         let question = tokens.eat().unwrap();
         let if_ = expression(tokens)?;
 
-        // The colon.
-        match tokens.eat() {
-            Some(t) if t.kind != TK::Colon => {
-                return Err(ExpectedToken {
-                    expected: TK::Colon,
-                    got: Some(t.kind),
-                    line: t.line,
-                })
-            }
-            None => {
-                return Err(ExpectedToken {
-                    expected: TK::Colon,
-                    got: None,
-                    line: question.line,
-                })
-            }
-            _ => (),
-        }
+        tokens.eat_kind(TK::Colon)?;
 
         let else_ = expression(tokens)?;
+
         expr = Expr::Ternary(Box::new(expr), Box::new(if_), Box::new(else_));
     }
 
@@ -319,19 +251,9 @@ fn group(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
     let opening = tokens.eat().unwrap();
     let expr = expression(tokens)?;
 
-    match tokens.eat() {
-        Some(r) if r.kind == TK::RightParenthesis => Ok(Expr::Group(Box::new(expr))),
-        Some(r) => Err(ExpectedToken {
-            expected: TK::RightParenthesis,
-            got: Some(r.kind),
-            line: r.line,
-        }),
-        None => Err(ExpectedToken {
-            expected: TK::RightParenthesis,
-            got: None,
-            line: opening.line,
-        }),
-    }
+    tokens.eat_kind(TK::RightParenthesis)?;
+
+    Ok(Expr::Group(Box::new(expr)))
 }
 
 // Should be ran by the last expression function when there is no more parseable expressions.
