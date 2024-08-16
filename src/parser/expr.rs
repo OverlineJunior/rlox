@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{literal::Literal, token::Token};
+use crate::scanner::{literal::Literal, token::Token};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -38,7 +38,7 @@ impl Display for Expr {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::token_kind::TokenKind as TK;
+    use crate::scanner::token_kind::TokenKind as TK;
 
     #[test]
     fn test_to_string() {

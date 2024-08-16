@@ -1,16 +1,10 @@
 #![allow(dead_code, unused_variables, unused_imports)]
 
-mod cursor;
-mod error;
-mod expr;
-mod interpreter;
-mod literal;
-mod parser;
-mod scanner;
-mod stmt;
-mod string_cursor;
-mod token;
-mod token_kind;
+pub mod cursor;
+pub mod error;
+pub mod interpreter;
+pub mod parser;
+pub mod scanner;
 
 use std::{cmp::Ordering, env, fs, io, path::Path};
 
@@ -58,7 +52,7 @@ fn run_prompt(interpreter: &mut Interpreter) {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::default();
 
     // 2 instead of 1 because the first value of args is not an user argument.
     match args.len().cmp(&2) {

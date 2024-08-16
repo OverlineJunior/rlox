@@ -1,10 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 
-use crate::{
-    error::runtime_error::{undefined_variable, RuntimeError},
-    literal::Literal,
-    token::Token,
-};
+use super::runtime_error::{RuntimeError, undefined_variable};
+use crate::scanner::{literal::Literal, token::Token};
 
 #[derive(Clone)]
 pub struct Env {
@@ -69,12 +66,12 @@ impl Env {
 }
 
 mod tests {
-    use crate::{literal::Literal, token::Token, token_kind::TokenKind};
     use super::Env;
+    use crate::scanner::{literal::Literal, token::Token, token_kind::TokenKind as TK};
 
     #[test]
     fn test() {
-        let and = Token::symbol(TokenKind::And, "and".into(), 1);
+        let and = Token::symbol(TK::And, "and".into(), 1);
         let one = Literal::Number(1.0);
         let two = Literal::Number(2.0);
         let three = Literal::Number(3.0);

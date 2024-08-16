@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{error::runtime_error::RuntimeError, token_kind::TokenKind};
+use crate::{interpreter::runtime_error::RuntimeError, scanner::token_kind::TokenKind};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Literal {

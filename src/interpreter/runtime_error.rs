@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{literal::Literal, token::Token, token_kind::TokenKind};
+use crate::scanner::{literal::Literal, token::Token, token_kind::TokenKind};
 
 #[derive(Clone, Debug)]
 pub enum RuntimeError {
@@ -87,7 +87,11 @@ impl fmt::Display for RuntimeError {
             }
 
             RuntimeError::UndefinedVariable { name } => {
-                write!(f, "[line {}] Undefined variable `{}`", name.line, name.lexeme)
+                write!(
+                    f,
+                    "[line {}] Undefined variable `{}`",
+                    name.line, name.lexeme
+                )
             }
         }
     }

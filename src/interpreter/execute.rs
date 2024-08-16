@@ -1,5 +1,5 @@
-use super::{env::Env, eval::eval};
-use crate::{error::runtime_error::RuntimeError, literal::Literal, stmt::Stmt};
+use super::{env::Env, eval::eval, runtime_error::RuntimeError};
+use crate::{parser::stmt::Stmt, scanner::literal::Literal};
 
 /// Executes a single statament tree, possibly causing side effects.
 /// This is the statement analogue of `eval`.
@@ -22,7 +22,7 @@ pub fn execute(stmt: Stmt, env: &mut Env) -> Result<(), RuntimeError> {
             for stmt in stmts {
                 execute(stmt, &mut new_env)?;
             }
-        },
+        }
     };
 
     Ok(())

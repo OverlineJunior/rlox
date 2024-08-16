@@ -1,12 +1,9 @@
-pub mod parse_error;
-pub mod scan_error;
-pub mod runtime_error;
-
 use std::fmt;
 
-use parse_error::ParseError;
-use scan_error::ScanError;
-use runtime_error::RuntimeError;
+use crate::{
+    interpreter::runtime_error::RuntimeError, parser::parse_error::ParseError,
+    scanner::scan_error::ScanError,
+};
 
 pub enum Error {
     Scan(ScanError),

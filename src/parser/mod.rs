@@ -1,12 +1,15 @@
+pub mod expr;
+pub mod parse_error;
+pub mod stmt;
+
 use crate::{
     cursor::Cursor,
-    error::parse_error::ParseError::{self, *},
-    expr::Expr,
-    literal::Literal,
-    stmt::Stmt,
-    token::Token,
-    token_kind::TokenKind as TK,
+    scanner::{literal::Literal, token::Token, token_kind::TokenKind as TK},
 };
+
+use expr::Expr;
+use parse_error::ParseError::{self, *};
+use stmt::Stmt;
 
 macro_rules! binary_expr {
     (fn $name:ident = $left:ident ($($op:ident),+) $right:ident $($rest:tt)*) => {
@@ -287,7 +290,7 @@ fn last_parse_error(tokens: &mut Cursor<Token>) -> ParseError {
 }
 
 mod tests {
-    use crate::{expr::Expr, parser::parse, scanner::tokenize};
+    use crate::{parser::parse, scanner::tokenize};
 
     #[test]
     fn test() {

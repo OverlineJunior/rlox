@@ -1,4 +1,4 @@
-use crate::{literal::Literal, token_kind::TokenKind};
+use super::{literal::Literal, token_kind::TokenKind};
 use std::fmt;
 
 #[derive(Clone, Debug)]

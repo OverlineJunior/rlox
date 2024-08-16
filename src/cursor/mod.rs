@@ -1,7 +1,9 @@
-use crate::error::parse_error::ParseError::{self, *};
+pub mod string_cursor;
 
-use crate::token::Token;
-use crate::token_kind::TokenKind;
+use crate::{
+    parser::parse_error::ParseError::{self, *},
+    scanner::{token::Token, token_kind::TokenKind},
+};
 
 pub struct Cursor<T: Clone> {
     source: Vec<T>,
@@ -72,8 +74,8 @@ impl<T: Clone> Cursor<T> {
 }
 
 impl Cursor<Token> {
-	/// Eats the current token if it is of the specified kind, returning it.
-	/// Otherwise, returns an error.
+    /// Eats the current token if it is of the specified kind, returning it.
+    /// Otherwise, returns an error.
     pub fn eat_kind(&mut self, kind: TokenKind) -> Result<Token, ParseError> {
         let current = self.current().ok_or(ExpectedToken {
             expected: kind,

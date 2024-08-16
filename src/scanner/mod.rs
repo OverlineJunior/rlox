@@ -1,10 +1,15 @@
-use crate::{
+pub mod literal;
+pub mod scan_error;
+pub mod token;
+pub mod token_kind;
+
+use self::{
     literal::Literal,
-    error::scan_error::ScanError::{self, *},
-    string_cursor::{StringCursor, EOF},
+    scan_error::ScanError::{self, *},
     token::Token,
     token_kind::TokenKind as TK,
 };
+use crate::cursor::string_cursor::{StringCursor, EOF};
 
 fn is_whitespace(c: char) -> bool {
     matches!(c, ' ' | '\r' | '\t' | '\n')
@@ -116,7 +121,12 @@ impl StringCursor {
             // Ignore whitespace.
             c if is_whitespace(c) => return self.eat_token(),
 
-            c => return Err(UnexpectedChar { ch: c, line: self.line() }),
+            c => {
+                return Err(UnexpectedChar {
+                    ch: c,
+                    line: self.line(),
+                })
+            }
         };
 
         Ok(Some(Token::symbol(
