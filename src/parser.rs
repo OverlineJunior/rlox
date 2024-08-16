@@ -133,7 +133,7 @@ fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 
     tokens.eat_kind(TK::RightBrace)?;
 
-    Ok(Stmt::Block { stmts })
+    Ok(Stmt::Block(stmts))
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {

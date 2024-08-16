@@ -16,7 +16,7 @@ pub fn execute(stmt: Stmt, env: &mut Env) -> Result<(), RuntimeError> {
             env.define(name, value);
         }
 
-        Stmt::Block { stmts } => {
+        Stmt::Block(stmts) => {
             let mut new_env = Env::new_enclosed(env.clone());
 
             for stmt in stmts {
