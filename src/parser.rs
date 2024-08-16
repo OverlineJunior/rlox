@@ -78,13 +78,10 @@ fn var_declaration(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
 
     let name = tokens.eat_kind(TK::Identifier)?;
 
-    // TODO! Try implementing something like ´tokens.try_eat_kind´.
-    let init = if tokens.current().filter(|t| t.kind == TK::Equal).is_some() {
-        tokens.eat().unwrap();
-        expression(tokens)?
-    } else {
-        // var a; has its value defaulted to Nil.
-        Expr::Literal(Literal::Nil)
+    let init = match tokens.eat_kind(TK::Equal) {
+        Ok(_) => expression(tokens)?,
+        // Unitiliazed variables are defaulted to Nil.
+        Err(_) => Expr::Literal(Literal::Nil),
     };
 
     tokens.eat_kind(TK::Semicolon)?;
