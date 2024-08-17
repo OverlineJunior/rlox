@@ -22,6 +22,14 @@ pub fn execute(stmt: Stmt, env: &mut Env) -> Result<(), RuntimeError> {
             for stmt in stmts {
                 execute(stmt, &mut new_env)?;
             }
+        },
+
+        Stmt::If { condition, then_branch, else_branch } => {
+            if eval(condition, env)?.is_truthy() {
+                execute(*then_branch, env)?;
+            } else if let Some(else_branch) = else_branch {
+                execute(*else_branch, env)?;
+            }
         }
     };
 

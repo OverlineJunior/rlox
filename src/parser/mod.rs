@@ -100,6 +100,7 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     {
         TK::Print => print_stmt(tokens),
         TK::LeftBrace => block(tokens),
+        TK::If => if_stmt(tokens),
         _ => expr_stmt(tokens),
     }
 }
@@ -137,6 +138,32 @@ fn block(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
     tokens.eat_kind(TK::RightBrace)?;
 
     Ok(Stmt::Block(stmts))
+}
+
+fn if_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    let if_ = tokens
+        .eat_kind(TK::If)
+        .expect("Should be called when If is the current token");
+
+    tokens.eat_kind(TK::LeftParenthesis)?;
+
+    let condition = expression(tokens)?;
+
+    tokens.eat_kind(TK::RightParenthesis)?;
+
+    let then_branch = Box::new(statement(tokens)?);
+
+    let else_branch = if tokens.eat_kind(TK::Else).is_ok() {
+        Some(Box::new(statement(tokens)?))
+    } else {
+        None
+    };
+
+    Ok(Stmt::If {
+        condition,
+        then_branch,
+        else_branch,
+    })
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
