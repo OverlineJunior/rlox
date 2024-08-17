@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::scanner::{literal::Literal, token::Token};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Literal(Literal),
     Unary(Token, Box<Expr>),
