@@ -196,7 +196,7 @@ fn assignment(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
 }
 
 fn ternary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
-    let mut expr = equality(tokens)?;
+    let mut expr = or(tokens)?;
 
     if tokens.current().is_some_and(|t| t.kind == TK::Question) {
         let question = tokens.eat().unwrap();
@@ -207,6 +207,28 @@ fn ternary(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
         let else_ = expression(tokens)?;
 
         expr = Expr::Ternary(Box::new(expr), Box::new(if_), Box::new(else_));
+    }
+
+    Ok(expr)
+}
+
+fn or(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
+    let mut expr = and(tokens)?;
+
+    while let Ok(op) = tokens.eat_kind(TK::Or) {
+        let right = and(tokens)?;
+        expr = Expr::Logical(Box::new(expr), op, Box::new(right));
+    }
+
+    Ok(expr)
+}
+
+fn and(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
+    let mut expr = equality(tokens)?;
+
+    while let Ok(op) = tokens.eat_kind(TK::And) {
+        let right = equality(tokens)?;
+        expr = Expr::Logical(Box::new(expr), op, Box::new(right));
     }
 
     Ok(expr)

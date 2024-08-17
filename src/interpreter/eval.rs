@@ -126,5 +126,17 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
             env.assign(name, evaluated.clone())?;
             Ok(evaluated)
         }
+
+        Expr::Logical(l, op, r) => {
+            let l = eval(*l, env)?;
+
+            // Short-circuiting since the right side is only evaluated if the left side
+            // is not enough to determine the result.
+            match op.kind {
+                TK::Or if l.is_truthy() => Ok(l),
+                TK::And if !l.is_truthy() => Ok(l),
+                _ => eval(*r, env),
+            }
+        }
     }
 }

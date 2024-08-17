@@ -11,6 +11,7 @@ pub enum Expr {
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Variable { name: Token },
     Assign { name: Token, value: Box<Expr> },
+    Logical(Box<Expr>, Token, Box<Expr>),
 }
 
 impl Display for Expr {
@@ -31,6 +32,8 @@ impl Display for Expr {
             Expr::Variable { name } => write!(f, "(var {})", name.lexeme),
 
             Expr::Assign { name, value } => write!(f, "(assign {} = {})", name.lexeme, value,),
+
+            Expr::Logical(l, op, r) => write!(f, "({} {} {})", l, op.lexeme, r),
         }
     }
 }
