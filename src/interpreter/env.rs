@@ -1,29 +1,32 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
+    rc::Rc,
+};
 
-use super::runtime_error::{RuntimeError, undefined_variable};
+use super::runtime_error::{undefined_variable, RuntimeError};
 use crate::scanner::{literal::Literal, token::Token};
 
-#[derive(Clone)]
 pub struct Env {
     bindings: HashMap<String, Literal>,
-    enclosing: Option<Box<Env>>,
+    enclosing: Option<Rc<RefCell<Env>>>,
 }
 
 impl Env {
     /// Returns an environment with no parent, aka global.
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             bindings: HashMap::new(),
             enclosing: None,
-        }
+        }))
     }
 
     /// Returns an environment with a parent.
-    pub fn new_enclosed(enclosing: Env) -> Self {
-        Self {
+    pub fn new_enclosed(enclosing: &Rc<RefCell<Env>>) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             bindings: HashMap::new(),
-            enclosing: Some(Box::new(enclosing)),
-        }
+            enclosing: Some(Rc::clone(enclosing)),
+        }))
     }
 
     /// Returns the value bound to ´name´ in the current or above scopes.
@@ -32,7 +35,7 @@ impl Env {
         if let Some(value) = self.bindings.get(&name.lexeme) {
             Ok(value.clone())
         } else if let Some(enclosing) = &self.enclosing {
-            enclosing.get(name)
+            enclosing.borrow().get(name)
         } else {
             Err(undefined_variable(name))
         }
@@ -47,25 +50,22 @@ impl Env {
     /// returning the old value.
     /// Errors if binding could not be found.
     pub fn assign(&mut self, name: Token, value: Literal) -> Result<Literal, RuntimeError> {
-        #[allow(clippy::map_entry)]
-        if self.bindings.contains_key(&name.lexeme) {
-            let old = self
-                .bindings
-                .insert(name.lexeme, value)
-                .expect("Should have the key");
-
-            return Ok(old);
+        match self.bindings.entry(name.lexeme.clone()) {
+            Entry::Occupied(mut entry) => {
+                let old = entry.insert(value);
+                Ok(old)
+            }
+            Entry::Vacant(_) => match &self.enclosing {
+                Some(enclosing) => enclosing.borrow_mut().assign(name, value),
+                None => Err(undefined_variable(name)),
+            },
         }
-
-        if let Some(enclosing) = &mut self.enclosing {
-            return enclosing.assign(name, value);
-        }
-
-        Err(undefined_variable(name))
     }
 }
 
 mod tests {
+    use std::{cell::RefCell, rc::Rc};
+
     use super::Env;
     use crate::scanner::{literal::Literal, token::Token, token_kind::TokenKind as TK};
 
@@ -75,16 +75,12 @@ mod tests {
         let one = Literal::Number(1.0);
         let two = Literal::Number(2.0);
         let three = Literal::Number(3.0);
+        let global = Env::new();
+        let child = Env::new_enclosed(&global);
 
-        let mut global = Env::new();
-        global.define(and.clone(), one.clone());
+        global.borrow_mut().define(and.clone(), one.clone());
+        let _ = child.borrow_mut().assign(and.clone(), two.clone());
 
-        let mut child = Env::new_enclosed(global.clone());
-        let _ = child.assign(and.clone(), two.clone());
-
-        global.define(and.clone(), three.clone());
-
-        assert!(global.get(and.clone()).is_ok_and(|l| l == three));
-        assert!(child.get(and).is_ok_and(|l| l == two));
+        assert_eq!(global.borrow().get(and.clone()).unwrap(), two);
     }
 }

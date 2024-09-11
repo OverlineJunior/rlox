@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use super::{
     env::Env,
     runtime_error::{self, *},
@@ -10,7 +12,7 @@ use crate::{
 /// Evaluates a single expression tree and returns the resulting literal.
 /// Evaluation can contain side effects, just like executions.
 /// This is the expression analogue of `execute`.
-pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
+pub fn eval(expr: Expr, env: Rc<RefCell<Env>>) -> Result<Literal, RuntimeError> {
     match expr {
         Expr::Literal(literal) => Ok(literal.clone()),
 
@@ -29,7 +31,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
         }
 
         Expr::Binary(l, op, r) => {
-            let l = eval(*l, env)?;
+            let l = eval(*l, env.clone())?;
             let r = eval(*r, env)?;
 
             match op.kind {
@@ -110,7 +112,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
         Expr::Group(expr) => eval(*expr, env),
 
         Expr::Ternary(expr, if_, else_) => {
-            let cond = eval(*expr, env)?;
+            let cond = eval(*expr, env.clone())?;
 
             if cond.is_truthy() {
                 eval(*if_, env)
@@ -119,16 +121,16 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Literal, RuntimeError> {
             }
         }
 
-        Expr::Variable { name } => env.get(name.clone()),
+        Expr::Variable { name } => env.borrow().get(name.clone()),
 
         Expr::Assign { name, value } => {
-            let evaluated = eval(*value, env)?;
-            env.assign(name, evaluated.clone())?;
+            let evaluated = eval(*value, env.clone())?;
+            let old = env.borrow_mut().assign(name, evaluated.clone())?;
             Ok(evaluated)
         }
 
         Expr::Logical(l, op, r) => {
-            let l = eval(*l, env)?;
+            let l = eval(*l, env.clone())?;
 
             // Short-circuiting since the right side is only evaluated if the left side
             // is not enough to determine the result.

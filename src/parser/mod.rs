@@ -101,6 +101,7 @@ fn statement(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         TK::Print => print_stmt(tokens),
         TK::LeftBrace => block(tokens),
         TK::If => if_stmt(tokens),
+        TK::While => while_stmt(tokens),
         _ => expr_stmt(tokens),
     }
 }
@@ -164,6 +165,22 @@ fn if_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
         then_branch,
         else_branch,
     })
+}
+
+fn while_stmt(tokens: &mut Cursor<Token>) -> Result<Stmt, ParseError> {
+    let while_ = tokens
+        .eat_kind(TK::While)
+        .expect("Should be called when While is the current token");
+
+    tokens.eat_kind(TK::LeftParenthesis)?;
+
+    let condition = expression(tokens)?;
+
+    tokens.eat_kind(TK::RightParenthesis)?;
+
+    let body = Box::new(statement(tokens)?);
+
+    Ok(Stmt::While { condition, body })
 }
 
 fn expression(tokens: &mut Cursor<Token>) -> Result<Expr, ParseError> {
