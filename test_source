@@ -1,16 +1,5 @@
-// This is a comment.
->=<<!=/!/ // Another comment!
-
-"Hello, world!"
-
-"Multi
-line
-string"
-
-42 555
-
-20.50
-
-_hi m_ate2
-
-while
+var i = 0;
+while (i < 10) {
+	i = i + 1;
+	print i;
+}

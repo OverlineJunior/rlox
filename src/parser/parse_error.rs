@@ -1,4 +1,4 @@
-use crate::token_kind::TokenKind;
+use crate::scanner::token_kind::TokenKind;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -18,6 +18,9 @@ pub enum ParseError {
     EmptyExpression,
     NotParseable {
         token: TokenKind,
+        line: usize,
+    },
+    BadAssignmentTarget {
         line: usize,
     },
 }
@@ -47,6 +50,9 @@ impl fmt::Display for ParseError {
             }
             ParseError::NotParseable { token, line } => {
                 write!(f, "[line {line}] `{:?}` cannot be turned into an expression", token)
+            }
+            ParseError::BadAssignmentTarget { line } => {
+                write!(f, "[line {line}] Invalid assignment target")
             }
         }
     }

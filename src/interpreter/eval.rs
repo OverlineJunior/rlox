@@ -1,17 +1,23 @@
+use std::{cell::RefCell, rc::Rc};
+
+use super::{
+    env::Env,
+    runtime_error::{self, *},
+};
 use crate::{
-    error::runtime_error::{bad_bin_ops, bad_un_op, div_by_zero, RuntimeError},
-    expr::Expr,
-    literal::Literal,
-    token_kind::TokenKind as TK,
+    parser::expr::Expr,
+    scanner::{literal::Literal, token_kind::TokenKind as TK},
 };
 
 /// Evaluates a single expression tree and returns the resulting literal.
-pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
+/// Evaluation can contain side effects, just like executions.
+/// This is the expression analogue of `execute`.
+pub fn eval(expr: Expr, env: Rc<RefCell<Env>>) -> Result<Literal, RuntimeError> {
     match expr {
         Expr::Literal(literal) => Ok(literal.clone()),
 
         Expr::Unary(op, r) => {
-            let r = interpret(*r)?;
+            let r = eval(*r, env)?;
 
             match op.kind {
                 TK::Minus => match r {
@@ -25,8 +31,8 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
         }
 
         Expr::Binary(l, op, r) => {
-            let l = interpret(*l)?;
-            let r = interpret(*r)?;
+            let l = eval(*l, env.clone())?;
+            let r = eval(*r, env)?;
 
             match op.kind {
                 TK::Plus => match (&l, &r) {
@@ -103,15 +109,35 @@ pub fn interpret(expr: Expr) -> Result<Literal, RuntimeError> {
             }
         }
 
-        Expr::Group(expr) => interpret(*expr),
+        Expr::Group(expr) => eval(*expr, env),
 
         Expr::Ternary(expr, if_, else_) => {
-            let cond = interpret(*expr)?;
+            let cond = eval(*expr, env.clone())?;
 
             if cond.is_truthy() {
-                interpret(*if_)
+                eval(*if_, env)
             } else {
-                interpret(*else_)
+                eval(*else_, env)
+            }
+        }
+
+        Expr::Variable { name } => env.borrow().get(name.clone()),
+
+        Expr::Assign { name, value } => {
+            let evaluated = eval(*value, env.clone())?;
+            let old = env.borrow_mut().assign(name, evaluated.clone())?;
+            Ok(evaluated)
+        }
+
+        Expr::Logical(l, op, r) => {
+            let l = eval(*l, env.clone())?;
+
+            // Short-circuiting since the right side is only evaluated if the left side
+            // is not enough to determine the result.
+            match op.kind {
+                TK::Or if l.is_truthy() => Ok(l),
+                TK::And if !l.is_truthy() => Ok(l),
+                _ => eval(*r, env),
             }
         }
     }
